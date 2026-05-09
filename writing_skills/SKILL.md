@@ -42,7 +42,7 @@ Effective skills offer *capabilities* and *toolkits*, not just *documentation*.
     judgment, branching logic, or optional steps. Frame these as "Key Actions"
     or "Capabilities" rather than sequential steps.
 *   **Workflow (Rigid Script)**: Use for deterministic, linear tasks that must
-    be executed in an exact order. (See the `jetski-workflows` skill for
+    be executed in an exact order. (See the `gemini-workflows` skill for
     details).
     *   **Bad**: "You can use the `requests` library to fetch the URL."
     *   **Good**: "Run `scripts/fetch_data.py <url>` to get the JSON response."
@@ -121,8 +121,8 @@ It determines discovery.
 ### Creating and Updating Skills
 
 *   **Use Version Control (CRITICAL)**:
-    *   **NEVER** create or edit files in `~/.gemini/jetski/skills` or
-        `jetski/global_skills`. These are local caches and your changes **WILL
+    *   **NEVER** create or edit files in `~/.gemini/gemini/skills` or
+        `gemini/global_skills`. These are local caches and your changes **WILL
         BE LOST**.
     *   **ALWAYS** work in google3 version control.
     *   **For NEW skills**: Create them under
