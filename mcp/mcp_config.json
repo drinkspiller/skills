@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "/Users/skyebot/miniconda3/bin/python",
+      "args": ["-m", "mcp_server_fetch"]
+    },
+    "context7": {
+      "serverUrl": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-7b8c5b14-f698-45eb-875e-78a21c159ad3"
+      }
+    }
+  }
+}
