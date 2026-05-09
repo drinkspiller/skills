@@ -8,7 +8,7 @@ description: Run iterative, self-referential AI development loops. Use when aske
 # Ralph Loop
 
 Implements the Ralph Wiggum technique for iterative, self-referential AI
-development loops in Jetski. Named after Ralph Wiggum from The Simpsons,
+development loops in Gemini. Named after Ralph Wiggum from The Simpsons,
 embodying the philosophy of persistent iteration despite setbacks.
 
 ## When to Use
