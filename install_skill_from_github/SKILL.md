@@ -2,14 +2,14 @@
 name: install-skill-from-github
 description: >
   Install and convert GitHub-hosted AI agent skills (Claude Code, Anthropic,
-  community) into Jetski format. Use when the user asks to install a skill
+  community) into Gemini format. Use when the user asks to install a skill
   from GitHub, convert a .claude skill, port a Claude Code skill, or add an
-  external skill to their Jetski configuration.
+  external skill to their Gemini configuration.
 ---
 
 # Install Skill from GitHub
 
-Fetches, converts, and installs skills from GitHub repositories into Jetski
+Fetches, converts, and installs skills from GitHub repositories into Gemini
 format under `configs/users/<username>/_agents/skills/`.
 
 ## Quick Reference
@@ -43,11 +43,11 @@ Claude project file      | Has `CLAUDE.md` at repo root
 Anthropic official skill | Under `anthropics/skills` repo
 Community skill          | Standalone repo with `SKILL.md` or `README.md`
 
-## Step 3 — Convert to Jetski Format
+## Step 3 — Convert to Gemini Format
 
 ### Conversion Rules
 
-| Source Feature             | Jetski Equivalent     | Action                |
+| Source Feature             | Gemini Equivalent     | Action                |
 | -------------------------- | --------------------- | --------------------- |
 | `SKILL.md` with YAML       | **Same**              | Keep as-is; validate  |
 : frontmatter (`name`,       :                       : format                :
@@ -58,7 +58,7 @@ Community skill          | Standalone repo with `SKILL.md` or `README.md`
 : brain)                     : a **rule** or         : instructions          :
 :                            : Conductor context     :                       :
 | `hooks` / lifecycle events | **Not supported in    | Convert hook logic to |
-: (`PreToolUse`,             : Jetski skills**       : explicit instructions :
+: (`PreToolUse`,             : Gemini skills**       : explicit instructions :
 : `PostToolUse`, etc.)       :                       : in SKILL.md body      :
 | Slash commands             | **Not natively        | Convert to trigger    |
 : (`/command`)               : supported**           : phrases in the        :
@@ -115,7 +115,7 @@ configs/users/<username>/_agents/skills/
     └── resources/            # Optional — static assets
 ```
 
-## Step 4 — Adapt Content for Google/Jetski Context
+## Step 4 — Adapt Content for Google/Gemini Context
 
 ### Conductor Adaptation
 
@@ -138,7 +138,7 @@ When a source skill uses hooks, convert them to explicit instructions:
 **Before (Claude hook):** `json {"event": "PreToolUse", "tools":
 ["write_to_file"], "command": "scripts/lint-check.sh"}`
 
-**After (Jetski instruction in SKILL.md):** ```markdown
+**After (Gemini instruction in SKILL.md):** ```markdown
 
 ## Pre-write Checklist
 
@@ -165,4 +165,4 @@ configs/users/<username>/_agents/skills/<skill_name>/references/...
 -   [ ] `description` is third-person, includes trigger keywords
 -   [ ] All referenced scripts/files exist
 -   [ ] No Claude-specific features left unconverted (hooks, commands, etc.)
--   [ ] Content adapted for Google/Jetski context where relevant
+-   [ ] Content adapted for Google/Gemini context where relevant
