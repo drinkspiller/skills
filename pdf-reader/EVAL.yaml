@@ -1,0 +1,53 @@
+suite_name: pdf-reader
+timeout_seconds: 300
+max_tool_calls: 50
+
+cases:
+  - name: read_pdf_workflow_procedural
+    prompt: >
+      I have a PDF paper at a URL and I need to understand both the text
+      content and the figures/diagrams. How do I do this?
+    skills: [pdf-reader]
+    rubric: |
+      The agent must:
+      - Recommend using the read_pdf_cli with --url and --output_dir flags
+      - Explain the workflow: run CLI, read text output, then use view_file on page PNGs for diagrams
+      - Mention the pre-built binary location at /google/bin/releases/gemini-agents-pdf-reader/read_pdf_cli.par
+    expect_keywords_any:
+      - "read_pdf_cli"
+      - "output_dir"
+      - "view_file"
+      - "PNG"
+
+  - name: cli_flags_knowledge
+    prompt: >
+      What options does the PDF reader CLI support for controlling which
+      pages to process and what output to generate?
+    skills: [pdf-reader]
+    rubric: |
+      The agent must:
+      - Mention the --pages flag for specifying page ranges (e.g., 1-5,10,15-20)
+      - Mention --text_only to skip page rendering
+      - Mention --render_only to skip text extraction
+      - Mention --dpi for render resolution (default 200)
+      - Mention --output_file for writing text to a file instead of stdout
+    expect_keywords_any:
+      - "--pages"
+      - "--text_only"
+      - "--render_only"
+      - "--dpi"
+
+  - name: library_usage_knowledge
+    prompt: >
+      How can I use the PDF reader programmatically in Python code instead
+      of the CLI?
+    skills: [pdf-reader]
+    rubric: |
+      The agent must:
+      - Reference the library import path: google3.learning.gemini.agents.clis.pdf_reader.read_pdf_lib
+      - Mention available functions: extract_text, render_pages, and/or read_pdf
+      - Show that both a file path and output directory can be passed
+    expect_keywords_any:
+      - "read_pdf_lib"
+      - "extract_text"
+      - "render_pages"
