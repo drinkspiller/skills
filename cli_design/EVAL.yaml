@@ -1,0 +1,54 @@
+suite_name: cli_design
+timeout_seconds: 300
+max_tool_calls: 50
+
+cases:
+  - name: flag_conventions
+    prompt: >
+      I'm designing a new CLI tool. What are the standard
+      conventions I should follow for naming flags and
+      arguments?
+    skills: [cli_design]
+    rubric: |
+      The agent must:
+      - Recommend preferring flags over positional arguments
+      - List standard flag names (--help, --verbose, --json, --dry-run)
+      - Explain using --no- prefix for boolean negations
+      - Warn against reading secrets from flags
+    expect_keywords_any:
+      - "--help"
+      - "--json"
+      - "--dry-run"
+
+  - name: output_design
+    prompt: >
+      How should I design the output of my CLI tool so it
+      works well for both human users and scripting?
+    skills: [cli_design]
+    rubric: |
+      The agent must:
+      - Explain stdout for primary output, stderr for diagnostics
+      - Recommend detecting TTY for format decisions
+      - Mention supporting --json for structured output
+      - Suggest --plain for grep/awk-compatible output
+    expect_keywords_any:
+      - "stdout"
+      - "stderr"
+      - "--json"
+
+  - name: error_handling
+    prompt: >
+      My CLI tool sometimes shows raw stack traces to users.
+      What's the recommended approach for error handling in
+      CLIs?
+    skills: [cli_design]
+    rubric: |
+      The agent must:
+      - Recommend rewriting errors for humans
+      - Explain including what went wrong and how to fix it
+      - Mention using non-zero exit codes for failures
+      - Note putting important information at the end of output
+    expect_keywords_any:
+      - "exit code"
+      - "human"
+      - "fix"
