@@ -31,7 +31,7 @@ Six roles, no overlap. Every piece of documentation text gets exactly one:
 | :--- | :------- | :---------- |
 | **Structure** | `**bold**`, `##` headers, `---` rules | Section headings, key term introductions, label text (`**Mode:**`), table headers |
 | **Secondary** | *italic*, plain text, parentheticals | Explanatory context, descriptions, caveats the reader can skip, parenthetical asides |
-| **Actionable** | `` `inline code` ``, `[links](url)`, fenced code blocks | Commands to run, API names, file paths, URLs, config keys, anything the reader will copy or click |
+| **Actionable** | `` `inline code` ``, `[links](url)`, fenced code blocks | Data values (identifiers, versions, branches, commits, modes), commands to run, API names, file paths, URLs — the "answer" to any label |
 | **Safe** | ✅ emoji, **bold** positive terms | Success states, "enabled", "complete", "included", "supported", positive confirmations |
 | **Caution** | ⚠️ emoji, **bold** caution terms | Non-destructive warnings, deprecation notices, "experimental", "not yet supported", "use with care" |
 | **Danger** | 🚨 emoji, **bold** danger terms, blockquote callouts | Breaking changes, data loss risk, security warnings, removal notices. **Never for informational content.** |
@@ -55,6 +55,13 @@ order (highest first):
 When you're unsure which role applies, walk this tree:
 
 ```
+Is this a STATUS WORD (enabled, deprecated, supported, removed, complete)?
+  └─ Yes → Is it positive? → ✅ **bold** (safe)
+           Is it cautionary? → ⚠️ **bold** (caution)
+
+Is this a DATA VALUE — the "answer" to a label in key-value text?
+  └─ Yes → `inline code` (actionable)
+
 Is this a COMMAND, PATH, API NAME, or URL the reader will copy/click?
   └─ Yes → `inline code` or [link](url) (actionable)
 
@@ -69,7 +76,7 @@ Does the reader need to NOTICE this but it's not dangerous?
 Is this a KEY TERM, LABEL, or SECTION HEADING?
   └─ Yes → **bold** or ## header (structure)
 
-Is this EXPLANATORY text the reader can skip?
+Is this EXPLANATORY text, a parenthetical, or a caveat?
   └─ Yes → *italic* or plain text (secondary)
 
 None of the above?
@@ -80,16 +87,92 @@ None of the above?
 
 | Scenario | Tempting choice | Correct choice | Why |
 | :------- | :-------------- | :------------- | :-- |
+| Mode name `prod` in key-value text | **bold** | `` `code` `` | It's a data value — the answer to "**Mode:**" |
+| Branch name `main` | plain text | `` `code` `` | It's a data value the reader may cross-reference |
+| Commit hash `3b620488` | plain text | `` `code` `` | It's a data value the reader may search for |
 | Function name in a sentence | **bold** | `` `code` `` | It's an actionable API reference, not emphasis |
 | "Deprecated" label | `` `code` `` | ⚠️ **bold** | It's a caution state, not something to copy |
 | File path in an explanation | *italic* | `` `code` `` | The reader might need to copy/navigate to it |
 | "Required" next to a field | ⚠️ caution | **bold** | It's structural metadata, not a warning |
 | Config value `true` | **bold** | `` `code` `` | It's a literal value the reader would type |
 | "Successfully deployed" | `` `code` `` | ✅ **bold** | It's a positive state, not a copyable string |
+| Config filename `app.yaml` | `` `code` `` | *italic* | Supporting detail — not the point of the row |
+| Parenthetical *(tree-shake)* | plain text | *italic* | Always secondary context |
 | Flag `--verbose` in prose | **bold** | `` `code` `` | It's a literal CLI flag |
+| `--no-promote` in prose emphasis | `` `code` `` | **bold** | Emphasis within a sentence, not actionable here |
 | "This will delete all data" | ⚠️ caution | 🚨 **danger** | Data loss = danger, not caution |
 | Environment name "staging" | **bold** | `` `code` `` | It's an actionable identifier |
 | "Note:" at start of a line | **bold** | *italic* | It's secondary context, not a structural label |
+
+---
+
+## Value Types in Key-Value Text
+
+When writing key-value documentation (`**Label:** value`), classify the value:
+
+| Value type | Role | Examples |
+| :--------- | :--- | :------- |
+| **Identifier** | `` `code` `` | version strings, commit hashes, branch names |
+| **State/choice** | `` `code` `` | mode names (`prod`, `staging`), environment names |
+| **Copyable reference** | `` `code` `` or `[link](url)` | URLs, shell commands, API endpoints |
+| **Status word** | ✅ or ⚠️ **bold** | "supported", "deprecated", "enabled", "removed" |
+| **Config/path** | *italic* | `app.prod.yaml`, `requirements.txt` |
+| **Parenthetical** | *italic* | *(production tree-shake)*, *(default)* |
+
+The rule is simple: if the value is **the answer the reader is scanning for**,
+it's `` `code` ``. If it's **supporting detail**, it's *italic*. If it's a
+**status signal**, it keeps its semantic role (✅/⚠️).
+
+---
+
+## Spacing & Grouping
+
+Use vertical spacing to create visual clusters in documentation.
+
+### Rules
+
+| Context | Spacing |
+| :------ | :------ |
+| Before a `##` heading | 1 blank line |
+| After a `---` horizontal rule | 1 blank line |
+| Between groups of related key-value rows | 1 blank line |
+| Between rows within the same group | 0 blank lines |
+| After a code block | 1 blank line |
+| Between a callout and its explanation | 0 blank lines |
+
+### Grouping Principle
+
+Cluster content by **what it describes**, not by its role or formatting.
+Common groups:
+
+- **Identity**: branch, commit, version (what code)
+- **Configuration**: config file, flags, options (how it's built)
+- **Result**: URL, status, output (what happened)
+- **Standalone**: mode, project — values that shape everything below
+
+A standalone value gets a blank line after it. Groups of 2–4 related items
+stay tight. One blank line separates groups.
+
+---
+
+## Heading Hierarchy
+
+Use markdown heading levels consistently:
+
+| Level | Markdown | Usage |
+| :---- | :------- | :---- |
+| **H1** | `#` | Document title only — one per file |
+| **H2** | `##` | Major sections: "Getting Started", "Configuration", "API Reference" |
+| **H3** | `###` | Sub-sections: individual steps, specific endpoints, sub-topics |
+| **H4** | `####` | Rare — nested sub-details within an H3 |
+
+### Rules
+
+- Never skip levels (e.g., `#` → `###` with no `##`).
+- Use `---` horizontal rules to separate thematically distinct sections
+  at the same heading level.
+- Don't use headers for emphasis — if you need emphasis within a
+  paragraph, use **bold**.
 
 ---
 
@@ -155,7 +238,8 @@ example doctor
 ### Configuration Table
 
 **Structure** for headers, **Actionable** for keys and defaults,
-**Secondary** for descriptions, **Caution** for constraints:
+**Secondary** for descriptions, **Caution** for constraints. Group
+related rows and separate groups with a blank line in the description:
 
 ```markdown
 ## Configuration Options
