@@ -14,6 +14,19 @@
 - **File Paths**: Resolve file names via open editors.
 - **Editor Sync**: `#openfiles` reads open editors into context.
 
+### 1.3. Search & File Reading
+
+- **Tool Hierarchy**: Prefer `rg` over `grep`, `fd` over `find`, `bat --line-range` over `cat`, `tree -L N` over `ls -R`. Use `ast-grep` (`sg`) for structural/syntax-aware matches.
+- **Output Bounding**: If a search produces >50 result lines, pipe to a temp file and paginate (`bat --line-range 1:40 results.tmp`). Never dump unbounded output into the prompt.
+- **Legacy Fallback**: If `rg`/`fd`/`bat` are unavailable, always use explicit `--exclude-dir` and `--exclude` flags. Raw `grep -r .` and `find .` without exclusions are forbidden.
+- **Missing Tools**: If modern tools are absent, provide the user with install instructions for their detected platform/package manager before falling back to legacy equivalents.
+- **Exact Strings**: Use fixed-string matching (`rg -F` / `grep -F`) when searching for literal error traces, symbols with special characters, or cryptographic keys to prevent regex escaping faults.
+
+### 1.4. Command Execution
+
+- **CLI Output Bounding**: For commands prone to unconstrained output (e.g., `git log`, `tree`, `npm list`), always restrict output length using native flags (e.g., `git log -n 5`) or pipe to temporary files.
+- **Asynchronous Tasks**: Never poll in a loop for background task completion (`manage_task status`). Rely on the system's reactive wakeup notifications.
+
 ## 2. Interaction & Philosophy
 
 ### 2.1. General
@@ -165,6 +178,7 @@ When debugging via logging, structure response as:
 
 - **Tool Selection**: Use native file tools instead of `python` or `sed`
   scripts.
+- **Surgical Edits**: Always prefer targeted chunk replacements (`replace_file_content` / `multi_replace_file_content`) over full-file overwrites (`write_to_file` with overwrite) to preserve token bandwidth and prevent unintended clobbering of un-analyzed code blocks.
 - **Shell Limits**: Avoid shell redirection (`>`, `>>`) or chaining (`&&`,
   `|`).
 - **Methods**: < 30 lines. Indentation nesting max 3 levels. Edited files must
@@ -222,6 +236,7 @@ When editing existing code:
 2.  **Code Solution**: Production-ready.
 3.  **Explanation**: Block-by-block justification.
 4.  **Edge Cases & Testing**: Invalid inputs, handling, testing strategy.
+5.  **Artifact Referencing**: When creating or updating artifacts, NEVER re-summarize contents in chat. Provide a clickable link and highlight only open questions or required user decisions.
 
 ## 7. Anti-Patterns Reference
 
