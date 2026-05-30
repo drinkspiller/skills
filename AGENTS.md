@@ -195,6 +195,12 @@ When editing existing code:
 - **Public APIs**: Mandate TSDoc/JSDoc for all exported functions and
   interfaces.
 
+### 4.5. Pre-Push Formatting
+
+- **Pre-Push Checks**: Before executing `git push`, run the repository's local linting and formatting verification tools (e.g., `pnpm lint`, `pnpm format:check`, `npm run lint`, or language-equivalent linter and formatter checks).
+- **Correct Violations**: If any checks fail, run the appropriate formatting or auto-fix commands (e.g., Prettier or linter auto-fix tools) on the flagged files.
+- **Commit Cleanliness**: Never push formatting fixes as separate, subsequent commits. Always amend them directly into the relevant commit to keep the repository history pristine.
+
 ## 5. Language Specifics
 
 ### 5.1. TypeScript
