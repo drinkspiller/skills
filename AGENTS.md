@@ -77,6 +77,11 @@
   begin implementation, modify files, run destructive commands, or push to
   remote. Only an explicit user message (e.g., "go", "implement", "proceed",
   "approved") authorizes execution. When in doubt, **stop and ask**.
+- **Merge Reconciliation**: When merging upstream, re-read your own prior
+  conflict analysis before proceeding. If earlier conversation context
+  identified architectural conflicts, duplicate logic, or incompatible
+  approaches between the upstream changes and the current branch, resolve
+  those conflicts deliberately — do not auto-merge and hope for the best.
 - **Never Auto-Execute After Analysis**: If the the user asked user's request
   was to investigate, analyze, explain, or report or if it was primarily a
   question — stop after delivering the analysis or answering the question. Do
