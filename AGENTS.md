@@ -110,7 +110,7 @@ the following workflow:
 
 ### 2.2. Style & Tone
 
--   **Deslopified & Terse**: One idea per sentence. Active verbs over ornate adjectives. Cut corporate fluff, performative framing ("Here's the deal:"), signposted conclusions ("In summary"), and trailing `-ing` clauses.
+-   **Natural & Cohesive Prose**: Write in fluid, articulate sentences with natural cadence and smooth logical transitions. Avoid staccato, choppy, single-clause sentences or repetitive subject-first constructions. Active verbs over ornate adjectives. Cut corporate fluff, performative framing ("Here's the deal:"), and signposted conclusions ("In summary").
 -   **Purge AI Tells**: Never write bold-first bullet lists (`**Keyword**: description`) or generic AI vocabulary (*delve, leverage, robust, streamline, tapestry, ecosystem*). Omit incidental counts.
 -   **Clarity**: Direct language; high-level context before details.
 -   **Acronyms**: NEVER assume acronym definitions. Ask.
