@@ -193,6 +193,19 @@ the following workflow:
     restating deductions when observations contradict logic.
 -   **Repeat Failures**: STOP and perform RCA if a tool fails twice for the same
     operation.
+-   **Crash Log Triage Order**: When a process dies, read the **tail** of its
+    log first (`tail -100 <logfile>`). Fatal exceptions, assertion failures, and
+    shutdown reasons are written last. Searching the middle of a crash log for
+    expected patterns before reading the end is the single most common cause of
+    wasted debugging time. For Boq servers specifically, look for
+    `DependencyVerifier`, `StartupTaskService [FAILED]`, and
+    `CreationException` — Guice/scope violations that produce clear messages but
+    are buried under thousands of lines of backend initialization noise.
+-   **Auto-Load Debugging Skills**: When investigating any crash, test failure,
+    or unexpected behavior, proactively load the `diagnose` and
+    `systematic-debugging` skills before beginning investigation. Do not wait
+    for the user to invoke them. Ad-hoc investigation without structured process
+    is the primary cause of wasted debugging time.
 
 ### 3.4. Diagnostician Pattern
 
