@@ -163,7 +163,7 @@ them).
     -   If interacting directly with code review APIs, ensure the full
         description text sent includes any required markdown rendering tags
         (e.g., `MARKDOWN=true`) at the end.
-    -   **Confirm that the description has been set or updated in the tool.**
+        -   **Confirm that the description has been set or updated in the tool.**
 -   **Change/PR Link:** After successfully creating or updating the commit,
     **always** retrieve the change/pull request identifier and present a
     clickable link to the user:
