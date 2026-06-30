@@ -92,7 +92,11 @@ the L2 reference modules on demand:
 *   **For Phase 3 (Ideation & Triplet Generation)**: Read
     `references/ideation-methods.md` (covers triplet method selection across
     Structural, Collision, and Perturbation categories, warmup pruning, and
-    system architecture idioms).
+    system architecture idioms). When ideas must be genuinely novel rather than
+    competent variations, also read `references/novel-ideation.md` (covers
+    anti-convergence techniques: average purge, bisociative domain collision,
+    constraint inversion, temporal retrieval, adversarial stress testing, and
+    specificity checks to defeat LLM mode collapse).
 *   **For Phase 4 (Evaluation & Stress-Testing Rubrics)**: Read
     `references/evaluation-rubric.md` (covers Brief Compliance pass/fail gates,
     6-Criteria multi-axis scoring, Competitor Swap verification, and Kill Your
