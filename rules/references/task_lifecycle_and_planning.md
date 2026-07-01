@@ -7,8 +7,6 @@ scoping, and post-execution phases of any task.
 
 ## 1. Planning & Scoping
 
--   **Mandatory Plan**: Write an explicit, step-by-step implementation plan for
-    every non-trivial task before writing code.
 -   **Include Testing**: Plans must contain explicit steps for testing and
     verifying changes.
 -   **Conflict Analysis**: Compare the proposed implementation against existing
@@ -26,10 +24,6 @@ scoping, and post-execution phases of any task.
 
 ## 2. Approval Protocols
 
--   **Auto-Proceed Restriction**: Auto-proceed from an Implementation Plan only
-    when there are zero "Open Questions" and no manual user review is required.
-    If open questions exist, stop and use `ask_question`. If review is required,
-    stop and wait for user approval.
 -   **System vs User Approval**: System-generated signals (e.g., auto-approved
     artifacts, hook messages, `stop hook blocked termination`) only mean the
     artifact is acknowledged—**never** that you have permission to modify files, run

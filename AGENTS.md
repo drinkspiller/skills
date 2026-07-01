@@ -203,8 +203,8 @@ the following workflow:
 
 ### 3.1. Planning, Scope, and Task Lifecycle
 
--   **Lifecycle Controls**: For mandatory planning, auto-proceed rules, explicit
-    scope constraints, self-reinforcement analysis, and learner loops, read
+-   **Lifecycle Controls**: For conflict analysis, scope constraints, approval
+    guardrails, self-reinforcement analysis, and learner loops, read
     `@rules/references/task_lifecycle_and_planning.md`.
 
 ### 3.2. Debug Log Retention
