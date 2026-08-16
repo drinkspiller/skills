@@ -1,8 +1,8 @@
 # /skill-opt — Test-Driven Skill & Rule Optimization for AI Agents
 
-Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats natural language instructions like model weights. This skill brings that discrete gradient descent loop directly into the developer workspace: evaluating agent rollouts against assertion loss, diagnosing failure traces, and turning fragile Markdown rules into robust, test-validated parameters.
+[SkillOpt](https://github.com/microsoft/SkillOpt) is an open-source text-space optimizer from Microsoft Research that treats natural-language skill documents as trainable parameters for frozen LLMs, replacing manual prompt tinkering with a reproducible compilation loop. The framework evaluates agents across task batches, using an auxiliary optimizer model to diagnose execution trajectory failures and generate targeted textual patches—additions, deletions, and replacements—for the underlying skill markdown. To maintain optimization stability and prevent regressions, the engine bounds edit sizes through a textual learning-rate budget, maintains a rejected-edit buffer to avoid circular revisions, and commits changes only when they clear a held-out validation gate. The resulting `best_skill.md` artifact deploys directly into agentic harnesses like Claude Code or Codex as a compact, portable instruction set that delivers empirical performance gains with zero runtime overhead or changes to agent logic.
 
-`/skill-opt` automates the entire evaluation, reflection, and patch deployment cycle directly inside the workspace without requiring manual Python harness setup.
+This `/skill-opt` skill automates the entire evaluation, reflection, and patch deployment cycle directly inside the workspace without requiring manual Python harness setup.
 
 ---
 
