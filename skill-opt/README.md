@@ -6,6 +6,22 @@ Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats na
 
 ---
 
+## Table of Contents
+
+- [Core Concepts](#core-concepts)
+- [Quickstart](#quickstart)
+- [Dynamic Harness Generation (No Pip Install Needed)](#dynamic-harness-generation-no-pip-install-needed)
+- [The 4-Phase Optimization Architecture](#the-4-phase-optimization-architecture)
+- [Supported LLMs and Agent Environments](#supported-llms-and-agent-environments)
+- [Algorithmic Safety Modules](#algorithmic-safety-modules)
+- [Evaluation Design and Multi-Platform Friction Harvesting](#evaluation-design-and-multi-platform-friction-harvesting)
+- [Zero-Dependency Execution](#zero-dependency-execution)
+- [Workflow Lifecycle](#workflow-lifecycle)
+- [Usage Example](#usage-example)
+- [References](#references)
+
+---
+
 ## Core Concepts
 
 In traditional machine learning, model weights update through numerical gradient descent to minimize loss over a dataset:
@@ -107,7 +123,7 @@ Candidate edits must pass two strict gates before acceptance:
 
 ---
 
-## Supported LLMs & Agent Environments
+## Supported LLMs and Agent Environments
 
 SkillOpt is provider-agnostic and operates across diverse model families and agent ecosystems:
 
@@ -144,7 +160,7 @@ To ensure stability across multi-task training batches without incurring excessi
 
 ---
 
-## Evaluation Design & Multi-Platform Friction Harvesting
+## Evaluation Design and Multi-Platform Friction Harvesting
 
 ### Universal Session Transcript Harvesting
 Instead of inventing synthetic edge cases from scratch, SkillOpt probes session log locations across all detected platforms. When logs from multiple tools exist, SkillOpt merges and deduplicates friction turns (user interventions like *"stop"*, *"ask one at a time"*, or tool execution retries) into reproducible regression benchmarks.
