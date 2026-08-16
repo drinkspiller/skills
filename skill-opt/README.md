@@ -6,13 +6,13 @@ Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats na
 
 ---
 
-## Core Mental Model: Textual Gradient Descent
+## Core Concepts
 
-In classical machine learning, neural network weights update via numerical gradient descent to minimize loss over a dataset:
+In traditional machine learning, model weights update through numerical gradient descent to minimize loss over a dataset:
 
 $$W_{t+1} = W_t - \eta \nabla \mathcal{L}(W_t)$$
 
-When engineering autonomous coding agents, the foundational model weights remain **frozen**. The behavioral parameters governing agent actions, tool sequences, and interactive constraints are defined in natural language within skill instructions ($S$).
+In agent engineering, foundational model weights remain **frozen**. The behavioral parameters governing agent actions, tool sequences, and interactive constraints live in plain text within skill instructions ($S$).
 
 SkillOpt implements the discrete, text-space analog of gradient descent across a multi-layer state machine:
 
@@ -51,7 +51,34 @@ flowchart TB
 
 ---
 
-## Execution Model: Algorithmic Methodology vs. Static Binaries
+## Quickstart
+
+### 1. Launch SkillOpt
+
+Invoke the skill directly from the agent chat interface:
+
+```text
+/skill-opt
+```
+
+Or target a specific skill or rule file:
+
+```text
+/skill-opt optimize skills/git-release/SKILL.md
+```
+
+### 2. Select Provider & Review Test Scenarios
+
+1. Choose the preferred model provider (`Google Gemini`, `Anthropic`, `OpenAI`, or `OpenRouter`).
+2. Review the auto-generated training and validation assertions presented in chat.
+
+### 3. Monitor Progress & Deploy
+
+SkillOpt launches the optimization run in the background and streams live progress updates every 30 seconds. When complete, inspect the unified diff report and approve the in-place deployment with automated backup protection.
+
+---
+
+## Dynamic Harness Generation (No Pip Install Needed)
 
 SkillOpt is fundamentally an **algorithmic methodology**—treating natural-language instructions as parameter spaces optimized through iterative rollout, rubric reflection, and monotonic gating—rather than a rigid software package requiring manual installation and configuration.
 
@@ -67,13 +94,13 @@ Instead of requiring external repository cloning, package dependency resolution,
 
 SkillOpt decouples execution into two specialized model roles in an iterative evaluation loop:
 
-### 1. Rollout (Target Agent)
+### 1. Execute (Target Agent)
 The target model executes problem scenarios using the instructions under test. This surfaces instructional blind spots, premature tool calls, missed prerequisite validations, and schema drift under realistic runtime conditions.
 
-### 2. Assertion Judge & Multi-Trace Reflection (Optimizer Critic)
+### 2. Judge & Diagnose (Optimizer Critic)
 An expressive optimizer model inspects the execution trajectory against discrete assertions. When failures occur, it computes root causes and synthesizes a unified Markdown patch addressing all failure modes simultaneously.
 
-### 3. Monotonic Validation Gating
+### 3. Gate & Commit (Validation Gate)
 Candidate edits must pass two strict gates before acceptance:
 - **Syntax & Structural Gate**: Preserves valid YAML frontmatter and top-level Markdown headers.
 - **Held-Out Validation Gate**: Evaluates the candidate on distinct, unseen validation scenarios. Only mutations that achieve a strict monotonic score improvement ($Score_{val} > BestScore_{val}$) are retained.
@@ -110,9 +137,9 @@ To ensure stability across multi-task training batches without incurring excessi
 
 | Module | Mechanism | Benefit |
 | :--- | :--- | :--- |
-| **Deterministic Edit Bounding (`clip`)** | Python `difflib` bounds the maximum line modification budget to **$\le 35\%$ per epoch** and enforces header retention. | Prevents runaway hallucinations and destructive section wipes before validation. |
-| **Multi-Trace Batch Aggregation (`aggregate`)** | Concatenates all failing rollout traces and assertion violations in a training batch into a single structured reflection prompt. | Synthesizes a unified patch that resolves multiple failure modes without contradictory rules. |
-| **Heuristic Step Sizing (`lr_autonomous`)** | Injects dynamic prompt directives based on baseline validation score ($<0.70$: structural additions; $\ge 0.70$: minimal surgical edits). | Adapts mutation granularity automatically between broad restructuring and fine-tuning. |
+| **Deterministic Edit Bounding (`clip`)** | Python `difflib` bounds the maximum line modification budget to **$\le 35\%$ per epoch** and enforces header retention. | Stops runaway rewrites from wiping working instructions. |
+| **Multi-Trace Batch Aggregation (`aggregate`)** | Concatenates all failing rollout traces and assertion violations in a training batch into a single structured reflection prompt. | Fixes multiple edge cases simultaneously without conflicting rules. |
+| **Heuristic Step Sizing (`lr_autonomous`)** | Injects dynamic prompt directives based on baseline validation score ($<0.70$: structural additions; $\ge 0.70$: minimal surgical edits). | Switches automatically between broad rewrites and single-line tweaks. |
 | **Pre-Flight Authentication Probes** | Sends an immediate lightweight test payload to the provider endpoint before workspace initialization. | Catches missing or expired API keys instantly with clean error messages. |
 
 ---
@@ -163,33 +190,6 @@ sequenceDiagram
     Dev->>Agent: Approve Deployment
     Agent->>Agent: Create Timestamped Snapshot (.bak) & Update Source In-Place
 ```
-
----
-
-## Quickstart
-
-### 1. Launch SkillOpt
-
-Invoke the skill directly from the agent chat interface:
-
-```text
-/skill-opt
-```
-
-Or target a specific skill or rule file:
-
-```text
-/skill-opt optimize skills/git-release/SKILL.md
-```
-
-### 2. Select Provider & Review Test Scenarios
-
-1. Choose the preferred model provider (`Google Gemini`, `Anthropic`, `OpenAI`, or `OpenRouter`).
-2. Review the auto-generated training and validation assertions presented in chat.
-
-### 3. Monitor Progress & Deploy
-
-SkillOpt launches the optimization run in the background and streams live progress updates every 30 seconds. When complete, inspect the unified diff report and approve the in-place deployment with automated backup protection.
 
 ---
 

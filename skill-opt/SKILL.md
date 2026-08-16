@@ -39,7 +39,7 @@ persona: Skill Optimizer
             -   `"Let me select specific files from the list"`
             -   `"Cancel"`
 4.  **Absolute Path Resolution:** Resolve all confirmed target path(s) to strict absolute paths.
-5.  Read each target file completely using `view_file` to ingest its existing frontmatter, behavioral steps, tool calls, and lifecycle constraints.
+5.  Read each target file completely to ingest its existing frontmatter, behavioral steps, tool calls, and lifecycle constraints.
 
 --------------------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ persona: Skill Optimizer
     -   Tool calling protocols and sequential stop barriers.
     -   Output artifact schemas and file modification constraints.
 3.  **Multi-Skill Schema Check (Interdependent Bundles):**
-    -   If optimizing interdependent skills (e.g., producer and consumer skills), you MUST use `view_file` to read the related skill files.
+    -   If optimizing interdependent skills (e.g., producer and consumer skills), read the related skill files.
     -   Cross-reference output schemas against consumer expectations to prevent handoff regressions.
 4.  **Synthesize Train & Val Datasets:** Auto-generate 2–3 training scenarios (combining mined transcript turns with synthetic edge cases) and 1–2 held-out validation scenarios in distinct technical domains:
     -   Each scenario must define an `id`, `prompt`, and 4–6 discrete `eval_criteria` assertions.
@@ -118,7 +118,7 @@ persona: Skill Optimizer
     -   Store the active key in a local `.env` file within the scratch directory or reference `os.environ["<PROVIDER>_API_KEY"]`. Never embed keys in version-controlled files.
 2.  **Suggest Workspace Directory or Detect Existing Session:**
     -   If the user provides an existing session directory, enter **Session Resumption Mode** (see §3.5).
-    -   Otherwise, propose a new dedicated scratch path: `{ARTIFACT_DIR}/scratch/skillopt_<slug>_<timestamp>/`
+    -   Otherwise, propose a new dedicated scratch path: `.scratch/skillopt_<slug>_<timestamp>/`
 3.  **Confirm Workspace Path:** Invoke `ask_question`:
     -   *Question:* "Where should the optimization session run?"
     -   *Options:*
@@ -153,8 +153,8 @@ persona: Skill Optimizer
 
 ### Step 4: Execution & Continuous Progress Updates
 
-1.  Launch `run_optimizer.py` in the background using `run_command` with `WaitMsBeforeAsync: 5000` and `NotificationTimeoutSeconds: 30`.
-2.  **Mandatory Frequent Progress Streaming:** The agent must NEVER stay silent during execution. Whenever awakened by a 30-second notification timeout, task completion, or log event, the agent must immediately output a visible status summary:
+1.  Launch `run_optimizer.py` as a background process.
+2.  **Mandatory Frequent Progress Streaming:** Output status updates every 30 seconds or upon epoch transitions:
     -   Current target file, active epoch (e.g., Epoch 1/2), and active phase (Rollout, Reflection, or Validation Gate).
     -   Real-time score deltas (e.g., "Epoch 1 training rollout completed with score 0.85; reflecting on 1 failure trace...").
     -   Validation gate decisions (Accepted with score gain vs. Rejected with rollback).
@@ -165,12 +165,12 @@ persona: Skill Optimizer
 ### Step 5: Report Artifact Generation & Deployment Gate
 
 1.  Read the resulting `best_skill.md` and compute the unified diff against `seed_skill.md`.
-2.  Create a comprehensive comparison artifact in `{ARTIFACT_DIR}/skillopt_report_<slug>.md` containing:
+2.  Create a comprehensive comparison report containing:
     -   **Executive Summary:** Overview of score gains and line count changes.
     -   **Performance Table:** Baseline vs. Final validation scores and percentage improvement.
     -   **Key Behavioral Refinements:** Detailed breakdown of resolved failure modes (e.g., modal batching, step ordering, schema gaps).
     -   **Unified Diff Block:** Complete Markdown diff showing exact deletions and additions.
-3.  Present the report artifact link to the user.
+3.  Present the report link to the user.
 4.  Prompt the user for deployment confirmation using `ask_question`:
     -   *Question:* "Would you like to deploy the optimized skill to its original path?"
     -   *Options:*
@@ -188,4 +188,4 @@ persona: Skill Optimizer
     -   **Automatic Pre-Deployment Snapshot:** Create a timestamped backup copy (`SKILL.md.bak_YYYYMMDD_HHMM`) in the target directory before modifying the original file.
     -   Write the contents of `best_skill.md` directly to the original absolute file path.
     -   Verify that YAML frontmatter and formatting integrity are strictly preserved.
-2.  Announce completion with a direct clickable link to the updated source file.
+2.  Announce completion with a direct link to the updated source file.
