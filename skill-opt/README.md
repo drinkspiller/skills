@@ -6,8 +6,20 @@ This `/skill-opt` skill automates the entire evaluation, reflection, and patch d
 
 ---
 
+## Skill Features
+
+- **Zero-Setup Dynamic Harness**: Generates a self-contained Python optimizer on the fly using standard library modules—no `pip install`, external repository clones, or dependency conflicts.
+- **Multi-Platform Friction Mining**: Mines recent developer corrections and friction turns across Claude Code, Cursor, and local session logs into regression test assertions.
+- **Strict Validation Gating**: Rejects hallucinated rewrites and commits markdown updates only when candidate patches demonstrate measurable score gains on held-out tasks.
+- **Bounded Mutation Guardrails**: Enforces a line modification budget ($\le 35\%$/epoch) and preserves YAML frontmatter to prevent destructive instruction wipes.
+- **Live 30-Second Progress Streaming**: Emits real-time rollout scores, reflection diagnoses, and gate updates directly in chat.
+- **Safe In-Place Rollback & Snapshots**: Preserves timestamped `.bak` backups in the source directory and allows immediate re-runs with adjusted criteria from the deployment prompt.
+
+---
+
 ## Table of Contents
 
+- [Skill Features](#skill-features)
 - [Core Concepts](#core-concepts)
 - [Quickstart](#quickstart)
 - [Dynamic Harness Generation (No Pip Install Needed)](#dynamic-harness-generation-no-pip-install-needed)
