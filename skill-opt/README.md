@@ -121,6 +121,14 @@ Candidate edits must pass two strict gates before acceptance:
 - **Syntax & Structural Gate**: Preserves valid YAML frontmatter and top-level Markdown headers.
 - **Held-Out Validation Gate**: Evaluates the candidate on distinct, unseen validation scenarios. Only mutations that achieve a strict monotonic score improvement ($Score_{val} > BestScore_{val}$) are retained.
 
+### Why Two Different Models?
+
+Decoupling execution into two specialized models addresses three critical engineering trade-offs:
+
+1. **Overcoming the Self-Grading Blind Spot**: A model rarely diagnoses its own instructional misinterpretations accurately. Asking a model to grade and rewrite instructions based on its own failed traces produces self-reinforcing hallucinations. A higher-capacity reasoning model (e.g., `gemini-2.5-pro`, `claude-3-5-sonnet`, `o3-mini`) is required to serve as the objective meta-critic.
+2. **Cost and Speed Asymmetry**: Optimization loops generate dozens of execution steps across multiple rollout epochs. Running high-volume rollouts on a fast, lightweight target (e.g., `gemini-2.5-flash` or `gpt-4o-mini`) while reserving the heavier reasoning model for batch reflection keeps the loop fast and cost-effective.
+3. **Calibrating to the Production Runtime**: Optimizing prompt instructions directly against the specific model that will execute them in production ensures that rules address the exact behavioral nuances and edge cases of that target model.
+
 ---
 
 ## Supported LLMs and Agent Environments
