@@ -1,8 +1,8 @@
 # /skill-opt — Test-Driven Skill & Rule Optimization for AI Agents
 
-> Most agent skills are written once on a hunch, tested twice by hand, and silently break on the third edge case. You only discover the blind spot when the agent ignores an instruction or misfires a tool in production.
+> Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats natural language instructions like model weights. This shifts prompt engineering from stochastic guesswork to test-driven parameter optimization—refining agent instructions through automated rollouts, textual loss reflection, and strict validation gating.
 
-`/skill-opt` brings test-driven engineering to prompt and rule development, inspired by Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) framework. It treats natural-language skill documents (`SKILL.md`) and behavioral rules (`*.md`) as **trainable, versionable parameters** for frozen LLMs—automating trajectory evaluation, root-cause reflection, and validation-gated patch deployment directly in your developer environment.
+`/skill-opt` automates the entire evaluation, reflection, and patch deployment cycle directly inside your workspace without requiring manual Python harness setup.
 
 ---
 
@@ -14,17 +14,34 @@ $$W_{t+1} = W_t - \eta \nabla \mathcal{L}(W_t)$$
 
 When engineering autonomous coding agents, the foundational model weights are **frozen**. The behavioral parameters governing agent actions, tool sequences, and interactive constraints are defined in natural language within skill instructions ($S$).
 
-SkillOpt implements the discrete, text-space analog of gradient descent:
+SkillOpt implements the discrete, text-space analog of gradient descent across a multi-layer state machine:
 
 ```mermaid
-flowchart LR
-    A["Current Skill (S_t)"] --> B["Rollout on Training Tasks"]
-    B --> C["Execution Trajectories & Failure Traces"]
-    C --> D["Optimizer Model\n(Compute Textual Gradient \u2207L)"]
-    D --> E["Candidate Mutation (S')"]
-    E --> F{"Monotonic Validation Gate\n(Score(S') > Score(S_t)?)"}
-    F -- "Yes" --> G["Accept: S_{t+1} = S'"]
-    F -- "No" --> H["Reject & Rollback"]
+flowchart TB
+    subgraph DataLayer["Data Layer"]
+        val["Validation Set (val.jsonl)"]
+        train["Training Set (train.jsonl)"]
+    end
+
+    subgraph Pipeline["SkillOpt Execution Pipeline"]
+        seed["Seed Skill (SKILL.md)"] --> active["Active Candidate Skill"]
+        active --> rollout["Rollout Phase: Execute Tasks\n(Target Model: e.g. gemini-2.5-flash)"]
+        train --> rollout
+        rollout --> traces["Trajectories & Execution Traces"]
+        traces --> judge["Evaluation & Rubric Scoring\n(Judge: e.g. gemini-2.5-pro)"]
+        judge --> analysis["Failure & Error Analysis"]
+        analysis --> reflect["Reflection & Patch Proposal\n(Optimizer: e.g. gemini-2.5-pro)"]
+        reflect --> diff["Candidate Textual Diff"]
+        diff --> gate{"Validation Gate\n(Val Score >= Baseline?)"}
+        val --> gate
+        gate -- "Rejected (No improvement)" --> rollback["Discard Patch & Rollback"]
+        gate -- "Accepted (Strict Gain)" --> checkpoint["Update Active Checkpoint"]
+        checkpoint --> active
+    end
+
+    subgraph Deployment["Deployment"]
+        checkpoint --> best["best_skill.md\n(In-Place Update with .bak Backup)"]
+    end
 ```
 
 1. **Forward Pass (Rollout)**: The target runtime model executes structured tasks against the active skill draft ($S_t$).
@@ -37,25 +54,6 @@ flowchart LR
 ## The 4-Phase Optimization Architecture
 
 SkillOpt decouples execution into two specialized model roles in an iterative evaluation loop:
-
-```
-┌────────────────────────────────────────────────────────┐
-│ 1. Rollout (Target Model: e.g. gemini-2.5-flash)       │
-│    Executes task scenarios against current skill draft │
-└──────────────────────────┬─────────────────────────────┘
-                           │ Trajectories & tool calls
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 2. Judge & Reflect (Optimizer Model: e.g. gemini-2.5)  │
-│    Scores rubrics, isolates failure traces, and patches│
-└──────────────────────────┬─────────────────────────────┘
-                           │ Candidate mutation
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 3. Validation Gate                                     │
-│    Score improved? Accept. Score dropped? Discard.     │
-└────────────────────────────────────────────────────────┘
-```
 
 ### 1. Rollout (Target Agent)
 The target model executes problem scenarios using the instructions under test. This surfaces instructional blind spots, premature tool calls, missed prerequisite validations, and schema drift under realistic runtime conditions.
