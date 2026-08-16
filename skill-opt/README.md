@@ -1,18 +1,18 @@
 # /skill-opt — Test-Driven Skill & Rule Optimization for AI Agents
 
-> Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats natural language instructions like model weights. This shifts prompt engineering from stochastic guesswork to test-driven parameter optimization—refining agent instructions through automated rollouts, textual loss reflection, and strict validation gating.
+Microsoft Research's [SkillOpt](https://github.com/microsoft/SkillOpt) treats natural language instructions like model weights. This skill brings that discrete gradient descent loop directly into the developer workspace: evaluating agent rollouts against assertion loss, diagnosing failure traces, and turning fragile Markdown rules into robust, test-validated parameters.
 
-`/skill-opt` automates the entire evaluation, reflection, and patch deployment cycle directly inside your workspace without requiring manual Python harness setup.
+`/skill-opt` automates the entire evaluation, reflection, and patch deployment cycle directly inside the workspace without requiring manual Python harness setup.
 
 ---
 
 ## Core Mental Model: Textual Gradient Descent
 
-In classical machine learning, we update neural network weights via numerical gradient descent to minimize loss over a dataset:
+In classical machine learning, neural network weights update via numerical gradient descent to minimize loss over a dataset:
 
 $$W_{t+1} = W_t - \eta \nabla \mathcal{L}(W_t)$$
 
-When engineering autonomous coding agents, the foundational model weights are **frozen**. The behavioral parameters governing agent actions, tool sequences, and interactive constraints are defined in natural language within skill instructions ($S$).
+When engineering autonomous coding agents, the foundational model weights remain **frozen**. The behavioral parameters governing agent actions, tool sequences, and interactive constraints are defined in natural language within skill instructions ($S$).
 
 SkillOpt implements the discrete, text-space analog of gradient descent across a multi-layer state machine:
 
@@ -47,7 +47,19 @@ flowchart TB
 1. **Forward Pass (Rollout)**: The target runtime model executes structured tasks against the active skill draft ($S_t$).
 2. **Loss Computation (Judge)**: An independent critic evaluates trajectories against explicit pass/fail assertion rubrics.
 3. **Textual Gradient ($\nabla \mathcal{L}$)**: The optimizer model reflects on failure traces, diagnoses instructional ambiguities, and synthesizes a targeted Markdown patch.
-4. **Validation Step**: The candidate mutation is evaluated on unseen held-out validation tasks. If the score improves, the update is accepted; if it regresses or stalls, the change is rejected.
+4. **Validation Step**: The candidate mutation is evaluated on unseen held-out validation tasks. When the score improves, the update is accepted; when it regresses or stalls, the change is rejected.
+
+---
+
+## Execution Model: Algorithmic Methodology vs. Static Binaries
+
+SkillOpt is fundamentally an **algorithmic methodology**—treating natural-language instructions as parameter spaces optimized through iterative rollout, rubric reflection, and monotonic gating—rather than a rigid software package requiring manual installation and configuration.
+
+Instead of requiring external repository cloning, package dependency resolution, or brittle prompt-template state machines:
+
+1. **Dynamic Harness Synthesis**: When `/skill-opt` executes, the agent analyzes the target instructions, harvests real friction from recent session history, and dynamically writes a self-contained Python optimization script (`run_optimizer.py`) tailored specifically to the chosen LLM provider and target files.
+2. **Zero-Dependency Execution**: The generated harness runs on standard Python 3 using built-in libraries (`urllib`, `difflib`, `json`), executing multi-epoch rollout, reflection, and validation loops without requiring `pip install` or external tooling.
+3. **Isolated & Inspectable**: All generated datasets (`train.jsonl`, `val.jsonl`), candidate diffs, and intermediate rollout logs reside in an isolated scratch workspace—providing full transparency into every mutation before in-place deployment.
 
 ---
 
@@ -70,7 +82,7 @@ Candidate edits must pass two strict gates before acceptance:
 
 ## Supported LLMs & Agent Environments
 
-SkillOpt is provider-agnostic and designed to operate across diverse model families and agent ecosystems:
+SkillOpt is provider-agnostic and operates across diverse model families and agent ecosystems:
 
 ### Supported LLM Providers
 
@@ -111,7 +123,7 @@ To ensure stability across multi-task training batches without incurring excessi
 Instead of inventing synthetic edge cases from scratch, SkillOpt probes session log locations across all detected platforms. When logs from multiple tools exist, SkillOpt merges and deduplicates friction turns (user interventions like *"stop"*, *"ask one at a time"*, or tool execution retries) into reproducible regression benchmarks.
 
 ### Split Isolation (Train vs. Validation)
-To prevent the optimizer from overfitting to specific keywords, technical domains are strictly isolated between splits (e.g., UI theme toggles and database migrations in `train.jsonl`, but payment webhooks and distributed locks in `val.jsonl`).
+To prevent the optimizer from overfitting to specific keywords, technical domains remain strictly isolated between splits (e.g., UI theme toggles and database migrations in `train.jsonl`, but payment webhooks and distributed locks in `val.jsonl`).
 
 ---
 
@@ -124,7 +136,7 @@ To prevent the optimizer from overfitting to specific keywords, technical domain
 
 ## Workflow Lifecycle
 
-When you invoke `/skill-opt`, the agent executes a structured 6-stage lifecycle:
+When `/skill-opt` is invoked, the agent executes a structured 6-stage lifecycle:
 
 ```mermaid
 sequenceDiagram
@@ -158,7 +170,7 @@ sequenceDiagram
 
 ### 1. Launch SkillOpt
 
-Invoke the skill directly from your AI agent chat interface:
+Invoke the skill directly from the agent chat interface:
 
 ```text
 /skill-opt
@@ -167,17 +179,107 @@ Invoke the skill directly from your AI agent chat interface:
 Or target a specific skill or rule file:
 
 ```text
-/skill-opt optimize skills/conductor-implement/SKILL.md
+/skill-opt optimize skills/git-release/SKILL.md
 ```
 
 ### 2. Select Provider & Review Test Scenarios
 
-1. Choose your preferred model provider (`Google Gemini`, `Anthropic`, `OpenAI`, or `OpenRouter`).
+1. Choose the preferred model provider (`Google Gemini`, `Anthropic`, `OpenAI`, or `OpenRouter`).
 2. Review the auto-generated training and validation assertions presented in chat.
 
 ### 3. Monitor Progress & Deploy
 
 SkillOpt launches the optimization run in the background and streams live progress updates every 30 seconds. When complete, inspect the unified diff report and approve the in-place deployment with automated backup protection.
+
+---
+
+## Usage Example
+
+The following walkthrough illustrates an end-to-end optimization session for a release automation skill:
+
+### 1. Invocation & Test Matrix Presentation
+
+The developer launches optimization for a target skill:
+
+```text
+/skill-opt optimize skills/git-release/SKILL.md
+```
+
+The agent scans recent session logs, extracts a friction turn where the model tagged a release before verifying that local tests passed, and synthesizes the evaluation matrix:
+
+> **Target Ingestion Complete:** Loaded `skills/git-release/SKILL.md` (142 lines).  
+> **Friction Mining:** Extracted 1 failure turn from session logs (release tagged on unverified commit).
+>
+> | Split | ID | Scenario Prompt | Source | Core Assertions |
+> | :--- | :--- | :--- | :--- | :--- |
+> | **Train** | `train_1` | "Create patch release for hotfix in auth handler" | Mined Log | Verifies clean working tree; executes test suite before tagging; validates semver format |
+> | **Train** | `train_2` | "Generate major release with breaking schema change" | Synthetic | Checks changelog entries; requires explicit confirmation for major version bumps |
+> | **Val** | `val_1` | "Trigger release on uncommitted local changes" | Synthetic | Aborts before tag creation; prompts developer to commit or stash uncommitted files |
+>
+> *Question:* Would you like to add any custom test scenarios or target specific failure cases?
+> - **[Option Selected]**: `(Recommended) Proceed with the generated test matrix`
+
+---
+
+### 2. Provider Selection & Environment Key Check
+
+The agent verifies API connectivity:
+
+> *Question:* Which model provider should run the optimization loop?
+> - **[Option Selected]**: `Google Gemini (Target: gemini-2.5-flash, Critic: gemini-2.5-pro)`
+>
+> Found active `GEMINI_API_KEY` in environment. Running pre-flight authentication probe...  
+> Pre-flight probe passed successfully. Generated `run_optimizer.py` and dataset splits in scratch workspace.
+
+---
+
+### 3. Background Execution & Live Progress Streaming
+
+The agent executes `python3 run_optimizer.py` in the background and streams live updates every 30 seconds:
+
+```text
+[SkillOpt Progress — 30s]
+Target: git-release | Active Phase: Epoch 1 Validation Gate
+- Baseline Validation Score: 0.33 / 1.00
+- Epoch 1 Training Batch Score: 0.50 (1 failure trace isolated)
+- Critic Reflection: Diagnosed missing pre-flight verification gate prior to tag execution.
+- Clip Guard: Line diff ratio 0.16 (within <= 0.35 budget).
+- Validation Gate: Candidate score 0.83 > Baseline 0.33 -> [ACCEPTED]
+
+[SkillOpt Progress — 60s]
+Target: git-release | Active Phase: Epoch 2 Complete
+- Epoch 2 Training Batch Score: 1.00 (0 failure traces)
+- Final Validation Score: 1.00 / 1.00
+- Best checkpoint saved to output/best_skill.md
+```
+
+---
+
+### 4. Diff Report Artifact & Deployment Approval
+
+The agent presents the evaluation report:
+
+> ### SkillOpt Optimization Report: `git-release`
+>
+> - **Validation Score**: `0.33` $\rightarrow$ `1.00` (**+200% improvement**)
+> - **Resolved Blind Spots**: Added mandatory pre-flight test verification before git tagging; enforced clean working tree check.
+>
+> ```diff
+> @@ -28,6 +28,10 @@
+>  ### Step 2: Release Validation & Tagging
+>  
+> +1. Pre-Flight Verification: Execute local test and lint checks before creating tags.
+> +   Halt immediately if any test fails.
+> +2. Working Tree State: Verify `git status` is clean. Never tag uncommitted changes.
+> +3. Semantic Version Validation: Confirm tag matches `vX.Y.Z` format.
+> -1. Run git tag with the specified version string.
+> ```
+>
+> *Question:* Would you like to deploy the optimized skill to its original path?
+> - **[Option Selected]**: `(Recommended) Approve and update original file in-place`
+>
+> Created backup snapshot: `skills/git-release/SKILL.md.bak_20260816_1500`  
+> Updated `skills/git-release/SKILL.md` in-place.
 
 ---
 
