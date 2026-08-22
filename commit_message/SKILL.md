@@ -1,6 +1,7 @@
 ---
 name: commit-message
-description: Generate and apply a commit message for pending changes using diff analysis.
+description: >
+  Generate and apply a commit message for pending changes using diff analysis.
 ---
 
 # Commit Message
@@ -31,14 +32,8 @@ updating the description of an existing change in the relevant tool.
         generated message.
     -   Await the user's clear response (A or N) before proceeding.
 -   **Diff Analysis:** Compare the current codebase against the base state
-    (e.g., parent commit in **Fig** or **JJ**, base branch in **Git**, or the
-    last sync point for new changes) to identify all modified, added, or deleted
-    files.
-    -   For **Fig/Mercurial** clients, effectively analyze the changes in the
-        current commit against the base commit by using commands like `hg diff
-        --from .^` or the configured parent commit.
-    -   For **Git** clients, compare against the base branch.
-    -   For **JJ** clients, compare against the parent commit.
+    (e.g., base branch in **Git**, parent commit, or the last sync point for new
+    changes) to identify all modified, added, or deleted files.
 -   **Downstream Impact Analysis:** Analyze if any critical, high-impact files
     (e.g., protobuf definitions `.proto`, public API contracts `.d.ts` / OpenAPI
     specs, database schemas, or core dependency configurations like `BUILD`,
@@ -68,13 +63,12 @@ updating the description of an existing change in the relevant tool.
     create a commit with or update the CL/PR description with the summary you
     generated, based on the user's choice if clarification was sought.** This
     means executing the necessary commands or API calls to set or modify the
-    description in the version control or code review system (e.g., Gerrit,
+    description in the version control or code review system (e.g.,
     GitHub, GitLab).
     -   **Always Upload/Push Updates:** Whether creating a **New** commit or
         performing an **Amend** action, you must always immediately upload/push
-        the updates to the remote review system (e.g., run `hg push` or `hg
-        upload` in Fig/Mercurial, or `git push` in Git) to ensure the remote
-        CL/PR/change remains fully synchronized with your local workspace.
+        the updates to the remote repository (e.g., run `git push`) to ensure
+        the remote PR/branch remains fully synchronized with your workspace.
     -   **Markdown Tag:** When creating or updating descriptions for review
         systems that require a markdown rendering flag (e.g., `MARKDOWN=true` or
         `MARKDOWN=1`), ensure the tag is appended on a new line at the very end
@@ -89,14 +83,11 @@ ensure the codebase remains clean, formatted, and compilable. Run these steps in
 order, using the commands appropriate for the system and project at play:
 
 1.  **Formatting (VCS & Language Native)**:
-    -   **VCS Native**: If using **Fig/Mercurial**, run `hg fix` to apply
-        repository-defined formatters.
-    -   **Project/Language Specific**: If using **Git** or other systems, run
-        the project's standard formatter (e.g., `npm run format`, `prettier
-        --write <changed_files>`, `black <changed_files>`, `gofmt`, `cargo
-        fmt`).
-    -   Always run specific formatters if available (like `mdformat --number` or
-        `prettier --write` for Markdown, or project-specific TypeScript
+    -   **Project/Language Specific**: Run the project's standard formatter
+        (e.g., `npm run format`, `prettier --write <changed_files>`, `black
+        <changed_files>`, `gofmt`, `cargo fmt`).
+    -   Always run specific formatters if available (like `mdformat --in_place`
+        or `prettier --write` for Markdown, or project-specific TypeScript
         formatters).
 2.  **Linting (Static Analysis)**:
     -   Run the project's static analysis or linting tools on the changed files
@@ -144,14 +135,6 @@ them).
 -   **Action Implementation:** To apply the description:
     -   Append `MARKDOWN=true` (or the appropriate markdown flag) to the end of
         the generated Markdown summary if required by the code review system.
-    -   If interacting with **Mercurial**:
-        -   If **New** commit: `hg commit -m "Generated Message..."` followed
-            immediately by `hg push` (or `hg upload`) to upload the new commit
-            to the code review system as a new change/pull request.
-        -   If **Amend**: `hg amend` (to include staged changes) then `hg
-            reword` to update the message, followed immediately by `hg push` (or
-            `hg upload`) to push the updated description to the code review
-            system.
     -   If interacting with **Git**:
         -   If **New** commit: `git add . && git commit -m "Generated
             Message..."` followed immediately by `git push` (or the appropriate
@@ -163,16 +146,14 @@ them).
     -   If interacting directly with code review APIs, ensure the full
         description text sent includes any required markdown rendering tags
         (e.g., `MARKDOWN=true`) at the end.
-        -   **Confirm that the description has been set or updated in the tool.**
+        -   **Confirm description update:** Verify the description is set in
+            the tool.
 -   **Change/PR Link:** After successfully creating or updating the commit,
     **always** retrieve the change/pull request identifier and present a
     clickable link to the user:
-    -   For **Fig/Mercurial**: Retrieve the change number or URL from the push
-        output, or use the configured review tool URL template.
-    -   For **Git** (Gerrit): Extract the change URL from the `git push` output.
-    -   For **JJ**: Run `jj log -r @ --template 'change_id'` and use the
-        workspace's review tool URL.
+    -   For **Git**: Extract the change URL or commit hash from the `git push`
+        output.
     -   **Format:** Always present the link prominently in your response, e.g.:
-        `PR/Change created: https://review.example.com/123456789`
+        `PR/Change created: https://github.com/org/repo/pull/123`
 -   **Granularity:** Group related changes into logical bullet points to ensure
     the description is thorough but readable.
