@@ -1,6 +1,6 @@
 ---
 name: ae-inspect-describe
-description: Inspect the active Adobe After Effects composition via the After Effects MCP bridge (https://github.com/Dakkshin/after-effects-mcp) and generate an exhaustive technical and motion design specification for translating it into a production web/app UI animation. Use when inspecting After Effects compositions, extracting layer hierarchies, auditing keyframes/expressions/effects, or translating AE animations into WebGL, Three.js, Canvas 2D, or CSS/SVG.
+description: Inspect the active Adobe After Effects composition via the After Effects MCP bridge (https://github.com/Dakkshin/after-effects-mcp), generate an exhaustive technical motion specification, and build a high-fidelity standalone interactive HTML/CSS/JS prototype with real-time HUD controls and dual-track WAAPI motion physics. Use when inspecting AE compositions, auditing keyframes/expressions/shaders, or translating AE animations into production WebGL, Canvas, and web UI.
 notes: Intended to be used with the After Effects MCP server (https://github.com/Dakkshin/after-effects-mcp).
 metadata:
   mcp_server: https://github.com/Dakkshin/after-effects-mcp
@@ -155,8 +155,7 @@ Your analysis must include:
 4.  **Engineering & Algorithmic Translation**:
 
     -   Map each After Effects technique to its modern web/native counterpart
-        (e.g., WebGL fragment shader, Canvas 2D, [Three.js](http://three.js/),
-        or CSS/SVG).
+        (e.g., WebGL fragment shader, Canvas 2D, Three.js, or CSS/SVG).
     -   Provide the mathematical formulation reproducing the visual physics of
         all motions (harmonic oscillations, 3D simplex noise slices, Gaussian
         diffusion kernels, transition easing curves).
@@ -174,11 +173,67 @@ Your analysis must include:
 
 --------------------------------------------------------------------------------
 
+## Interactive Local Prototype Generation
+
+When requested or when validating complex multi-layer or sequential animations,
+generate a fully interactive, self-contained HTML/CSS/JS prototype:
+
+1.  **Standalone & Zero External Runtime Dependencies**:
+
+    -   Embed all footage and graphic assets directly as base64 data URIs or
+        clean relative paths.
+    -   Implement background shaders via standard WebGL canvas with real-time
+        simplex noise domain warping matching AE turbulent displace and gradient
+        ramps.
+
+2.  **Dual-Track Web Animations API (WAAPI) Engine**:
+
+    -   **Track 1 (Spatial Translation)**: Use dedicated 2-point keyframe tracks
+        (`translateX`/`translateY`) driven continuously by After Effects easing
+        (e.g., AE Quintic Deceleration: `cubic-bezier(0.20, 0.0, 0.0, 1.0)`).
+    -   **Track 2 (Concurrent Opacity Cross-Dissolve)**: Run opacity fades on an
+        independent animation track across smooth cross-dissolve windows.
+    -   **CRITICAL ANTI-PATTERN**: NEVER combine spatial displacement and
+        opacity into a single multi-point keyframe array with intermediate
+        offsets (`offset: 0.25`, `offset: 0.4`) when using non-linear easing in
+        WAAPI. Browsers evaluate easing independently per sub-segment, causing
+        elements to move invisibly and pop/snap into place.
+
+3.  **Physical Layer Stacking & Occlusion Geometry**:
+
+    -   Establish explicit physical `z-index` hierarchies (e.g., foreground
+        cards at `z-index: 5`, underlays at `z-index: 2`).
+    -   Calculate launch coordinates relative to foreground bounding boxes so
+        underlay layers start $100\%$ hidden behind foreground elements and
+        glide naturally into view with appropriate stagger delays.
+
+4.  **Continuous Transition Lifecycle**:
+
+    -   In multi-state carousels, execute outgoing and incoming transitions
+        simultaneously in parallel without globally canceling resting
+        animations, preventing DOM elements from abruptly resetting to baseline
+        hidden states.
+
+5.  **Interactive HUD Controls**:
+
+    -   Equip the prototype with real-time tuning sliders for animation
+        duration, stagger delays, opacity windows, and shader speed.
+    -   Include navigation controls, slow-motion toggles, an intro replay
+        button, and a `prefers-reduced-motion` accessibility toggle.
+    -   Implement responsive auto-scaling (`scale(min(scaleX, scaleY))`) so the
+        fixed composition stage fits comfortably in any browser viewport.
+
+--------------------------------------------------------------------------------
+
 ## Output Artifact & Reporting Format
 
 1.  **Write Specification Artifact**: Persist the complete, exhaustive
     specification to a dedicated Markdown artifact (`ae_motion_spec.md`).
-2.  **Chat Summary**: In the chat response, deliver a high-level executive
+2.  **Prototype Deliverable**: Persist the standalone interactive prototype to
+    `index.html` (e.g. within an `*-prototype` directory) and verify in the
+    browser.
+3.  **Chat Summary**: In the chat response, deliver a high-level executive
     summary covering the composition identity, core visual physics, key
     technical translation decisions, and accessibility strategy, accompanied by
-    a direct reference to the generated `ae_motion_spec.md` artifact.
+    a direct reference to the generated `ae_motion_spec.md` artifact and
+    prototype.
