@@ -52,13 +52,64 @@ updating the description of an existing change in the relevant tool.
     appropriate metadata tags to the bottom of the CL/PR description (e.g.,
     `Closes #1234` / `Fixes #1234` for GitHub/GitLab, or the custom review
     system's bug tag format).
--   **Comprehensive Summary Generation:** Write a description that includes:
-    -   **Headline:** A concise, one-line summary of the change.
-    -   **Body:** A detailed breakdown of the logic changes, highlighting any
-        modified APIs or data structures.
-    -   **Side Effects:** Explicitly mention any changes to existing behavior,
-        potential impacts on downstream systems, and the results of the
-        Downstream Impact Analysis.
+-   **Comprehensive Summary Generation (Engineering Broadcast Standard):** Write a
+    description that balances high-density executive clarity with technical
+    depth, following high-signal engineering communication standards:
+    -   **Headline Formatting:** A concise, one-line summary of the change.
+        -   Prefix the headline with the project/domain tag in square brackets based on
+            modified file paths (e.g., `[Auth]`, `[Billing]`, `[API]`, `[UI]`).
+        -   Start summary with an imperative, present-tense verb (e.g., `Release`,
+            `Refactor`, `Add`, `Fix`, `Implement`).
+        -   Wrap all code symbols, service names, and API methods in backticks
+            (e.g., ``[Auth] Implement token refresh interceptor in `auth_client.go` ``).
+        -   Keep to 72 characters or fewer without trailing punctuation.
+    -   **The Executive `TL;DR:` (Mandatory):**
+        -   Immediately below the headline, insert a single 1–2 sentence
+            `TL;DR:` paragraph.
+        -   **Voice & Tone**: Calm, direct, authoritative, and outcome-oriented.
+            State the *human capability* and *system guarantee* unlocked by this
+            change before diving into specifics. Avoid corporate jargon,
+            performative hype, or raw file names.
+        -   **Formula**: `TL;DR: [Project/System] now [core capability /
+            behavioral outcome]—[mechanism 1], [mechanism 2], and
+            [developer/system guarantee].`
+        -   Must be completely understandable by any engineer in under 5 seconds
+            without reading the code diff.
+    -   **Thematic Capability Bullets (`What's New:` / `Changes:` / `Fixes:`):**
+        -   Structure bullets as capability-oriented features, not dry file
+            diffs or mechanical nuts-and-bolts.
+        -   **Prohibit Bare Code Leads**: Never start a bullet with a raw file
+            name, class name, or mechanical code edit (e.g., avoid `* Updated
+            session_store.go to...`).
+        -   **Mandatory Thematic Anchors**: Every bullet MUST lead with a bold,
+            user-visible capability or architectural invariant:
+            -   `* **Interactive Verification Walkthroughs**: ...`
+            -   `* **Automated Fixture Preparation (Smart Gate)**: ...`
+            -   `* **Zero-Guesswork Navigation**: ...`
+            -   `* **In-Flight Discrepancy Triage**: ...`
+        -   **Voice & Tone**:
+            -   Active, present-tense verbs (`Reads...`, `Runs...`,
+                `Provides...`, `Evaluates...`).
+            -   Focus on the *what* and *why* rather than internal signal
+                mechanics, local variables, or pixel measurements.
+            -   Mention concrete developer-facing commands (e.g., `./run.sh`,
+                `npm run dev`, CLI flags) or URLs where applicable to provide operational
+                clarity.
+            -   Keep bullet lists concise (3–6 punchy items).
+    -   **Side Effects Section (`### Side Effects`):**
+        -   Explicitly document behavioral shifts, operational changes, breaking
+            contracts, downstream impacts, and migration considerations (or
+            state `None`).
+    -   **TESTED / Verification Section (`### TESTED`):**
+        -   Dedicated verification section documenting:
+            -   Automated unit and integration test pass counts (e.g., `pytest`,
+                `npm test`, `cargo test`).
+            -   Benchmark metrics, empirical pass rates, and confidence
+                intervals.
+            -   UI screenshot URLs (e.g., PR attachments, image links) or
+                test artifact links.
+            -   Local installation or deployment test commands (`install.sh
+                --target=global` or `npm test`).
 -   **Description Update/Creation:** **Crucially, you must then take action to
     create a commit with or update the CL/PR description with the summary you
     generated, based on the user's choice if clarification was sought.** This
