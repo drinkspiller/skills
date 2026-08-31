@@ -1,0 +1,12 @@
+{
+  "display_name": "SkillOpt Sleep",
+  "description": "Nightly skill optimization daemon for Antigravity, automatically harvesting friction and refining agent skills.",
+  "builtin": "schedule",
+  "args": [
+    "0 2 * * *",
+    "agentapi",
+    "new-conversation",
+    "Execute nightly SkillOpt Sleep multi-skill optimization loop across agent skills.\n\n1. Candidate Discovery & Friction Harvesting:\n- Harvest friction and developer corrections from local session transcripts (e.g. `~/.gemini/antigravity/brain/`, Claude Code `~/.claude/`, Cursor, or `./.sessions/`) modified in the past 24-48 hours.\n- Rank candidate skills by total friction volume (tool execution errors + user corrections).\n- Filter out skills with active open pull requests or whose baseline evaluation achieves 100% accuracy (converged).\n- Dynamically select the top 3 un-optimized skills.\n\n2. Optimization Execution:\n- Run the self-contained SkillOpt runner: `python3 sidecar/runner.py --top_k 3` (or direct CLI execution).\n- Evaluates each candidate skill with semantic token diff bounding (diff <= 0.35), intent-based evaluation rubrics, and monotonic validation gating.\n\n3. Adaptive Staging & Delivery:\n- If the target skill is in a Git repository:\n  * Create a dedicated git branch `skillopt/<skill-name>-<YYYYMMDD>`.\n  * Generate a human-readable commit message and PR description containing the synthesized `## Problem Mined` summary with concrete examples, `TESTED:` metrics (train/val deltas, diff ratio, models used), and `## Changes Applied`.\n  * If `gh` is authenticated, open a draft GitHub Pull Request (`gh pr create --draft`). Do NOT auto-merge.\n- If outside a Git repository:\n  * Stage the optimized `SKILL.md` in `~/.skillopt/staging/<skill-name>/` along with a markdown summary report.\n- Deliver morning summary notification."
+  ],
+  "restart_policy": "always"
+}
