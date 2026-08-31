@@ -28,6 +28,7 @@ This `/skill-opt` skill automates the entire evaluation, reflection, and patch d
 - [Algorithmic Safety Modules](#algorithmic-safety-modules)
 - [Evaluation Design and Multi-Platform Friction Harvesting](#evaluation-design-and-multi-platform-friction-harvesting)
 - [Zero-Dependency Execution](#zero-dependency-execution)
+- [Scheduled Overnight Optimization (Antigravity Sidecar)](#scheduled-overnight-optimization-antigravity-sidecar)
 - [Workflow Lifecycle](#workflow-lifecycle)
 - [Usage Example](#usage-example)
 - [References](#references)
@@ -316,6 +317,20 @@ The agent presents the evaluation report:
 >
 > Created backup snapshot: `skills/git-release/SKILL.md.bak_20260816_1500`  
 > Updated `skills/git-release/SKILL.md` in-place.
+
+---
+
+## Scheduled Overnight Optimization (Antigravity Sidecar)
+
+In addition to interactive sessions via `/skill-opt`, the repository includes an automated background optimization daemon in `sidecar/`:
+
+- **Cron-Driven Reflection**: Runs silently overnight (`0 2 * * *` / 2:00 AM) using Antigravity's native `schedule` builtin to discover friction without manual prompting.
+- **Friction Harvesting & Synthesis**: Mines session transcripts across Antigravity, Claude Code, and Cursor, auto-synthesizing problem summaries with concrete failure examples.
+- **Adaptive Delivery**:
+  - In Git repositories: commits to a dedicated `skillopt/<skill>-<date>` branch and opens a draft GitHub Pull Request (`gh pr create --draft`).
+  - Outside Git: stages files in `~/.skillopt/staging/<skill>/`.
+
+See [sidecar/README.md](sidecar/README.md) for quickstart instructions and configuration schema.
 
 ---
 

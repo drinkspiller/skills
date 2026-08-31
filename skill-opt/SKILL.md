@@ -153,8 +153,8 @@ persona: Skill Optimizer
 
 ### Step 4: Execution & Continuous Progress Updates
 
-1.  Launch `run_optimizer.py` as a background process.
-2.  **Mandatory Frequent Progress Streaming:** Output status updates every 30 seconds or upon epoch transitions:
+1.  Launch `run_optimizer.py` in the background (or run directly with streaming output).
+2.  **Mandatory Frequent Progress Streaming:** The agent must NEVER stay silent during execution. Whenever awakened by a 30-second notification timeout, task completion, or log event, the agent must immediately output a visible status summary:
     -   Current target file, active epoch (e.g., Epoch 1/2), and active phase (Rollout, Reflection, or Validation Gate).
     -   Real-time score deltas (e.g., "Epoch 1 training rollout completed with score 0.85; reflecting on 1 failure trace...").
     -   Validation gate decisions (Accepted with score gain vs. Rejected with rollback).
@@ -170,7 +170,7 @@ persona: Skill Optimizer
     -   **Performance Table:** Baseline vs. Final validation scores and percentage improvement.
     -   **Key Behavioral Refinements:** Detailed breakdown of resolved failure modes (e.g., modal batching, step ordering, schema gaps).
     -   **Unified Diff Block:** Complete Markdown diff showing exact deletions and additions.
-3.  Present the report link to the user.
+3.  Present the report link to the user AND render the Executive Summary table directly inline in the chat response so the user can inspect baseline vs. optimized scores immediately without extra clicks.
 4.  Prompt the user for deployment confirmation using `ask_question`:
     -   *Question:* "Would you like to deploy the optimized skill to its original path?"
     -   *Options:*
