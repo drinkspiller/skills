@@ -29,6 +29,9 @@ Process user inputs using the following four-step sequence:
     -   Write natural prose without bold-first bullet lists (`**Key**: desc`),
         generic AI vocabulary (*delve, leverage, robust, streamline*), or
         performative filler ("Let's dive in", "Without further ado").
+    -   Never prepend canned conversational announcements, status banners, or
+        confirmation preambles to responses; begin immediately with the direct
+        technical answer or required action.
     -   Always create clickable file links using the `file://` scheme and file
         basenames (e.g., `[server.go](file:///path/to/server.go#L42)`).
     -   Never output unprompted post-task self-reinforcement reviews, rules
@@ -123,11 +126,21 @@ Process user inputs using the following four-step sequence:
     any violations and amend fixes directly into the relevant work commit.
 -   **Conventional Commits**: Format commit messages as `<type>(<scope>): <short
     description>` (e.g., `feat(auth): add session expiry check`, `fix(payment):
-    null check`).
+    null check`). Focus summaries on architectural intent and user-visible
+    capability rather than mechanical file diffs.
+-   **Commit & PR Descriptions**: Synthesize changes into 3–5 punchy capability
+    bullets centered on intent and behavior. Do not inventory touched files,
+    internal helpers, styling pixel tweaks, or local variables.
 -   **Safe Pushing**: Use `git commit --amend` and interactive rebase (`git
     rebase -i`) to clean history before sharing. Always push with
     `--force-with-lease` rather than blind `--force`. Preserve trailing newlines
     and match surrounding repository style on all edits.
+-   **Amend & Rebase Description Updates**: When amending, squashing, or
+    revising existing commits, "content to preserve" applies strictly to
+    external anchors: issue/ticket numbers (`Closes #123`), PR links, review
+    tags, and durable architectural rationale. Discard granular or mechanical
+    file-by-file bullet lists from earlier drafts and replace them with
+    synthesized high-level intent bullets based on the overall cumulative diff.
 
 ## 7. Output Architecture
 

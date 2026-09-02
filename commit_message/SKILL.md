@@ -34,15 +34,12 @@ updating the description of an existing change in the relevant tool.
 -   **Diff Analysis:** Compare the current codebase against the base state
     (e.g., base branch in **Git**, parent commit, or the last sync point for new
     changes) to identify all modified, added, or deleted files.
--   **Downstream Impact Analysis:** Analyze if any critical, high-impact files
-    (e.g., protobuf definitions `.proto`, public API contracts `.d.ts` / OpenAPI
-    specs, database schemas, or core dependency configurations like `BUILD`,
-    `package.json`, `go.mod`) are modified. If so, perform a system-generic
-    dependency analysis (e.g., querying reverse dependencies via `bazel query`
-    or inspecting import trees) to identify affected downstream targets,
-    packages, or modules. Explicitly list these affected components and any
-    potential breaking changes in the **Side Effects** section of the generated
-    description.
+-   **Downstream Impact Analysis:** Analyze downstream impact only when
+    modifying critical, high-impact contract files (e.g., protobuf definitions
+    `.proto`, public API contracts `.d.ts` / OpenAPI specs, database schemas, or
+    breaking dependency upgrades). If genuine breaking changes, schema
+    migrations, deprecations, or service risks exist, prepare them for the
+    conditional **Side Effects** section.
 -   **Logic Synthesis:** Identify the primary intent of the changes. Distinguish
     between architectural changes, bug fixes, refactors, and simple UI
     adjustments.
@@ -56,12 +53,15 @@ updating the description of an existing change in the relevant tool.
     description that balances high-density executive clarity with technical
     depth, following high-signal engineering communication standards:
     -   **Headline Formatting:** A concise, one-line summary of the change.
-        -   Prefix the headline with the project/domain tag in square brackets based on
-            modified file paths (e.g., `[Auth]`, `[Billing]`, `[API]`, `[UI]`).
+        -   Prefix the headline with the project or domain tag in square brackets
+            (e.g., `[Auth]`, `[Billing]`, `[API]`, `[UI]`).
         -   Start summary with an imperative, present-tense verb (e.g., `Release`,
             `Refactor`, `Add`, `Fix`, `Implement`).
-        -   Wrap all code symbols, service names, and API methods in backticks
-            (e.g., ``[Auth] Implement token refresh interceptor in `auth_client.go` ``).
+        -   Model high-level architectural intent or user-visible capability
+            rather than low-level implementation mechanics or specific file
+            names (e.g., `[Auth] Add pre-creation agent onboarding introduction flow`).
+        -   Wrap referenced public API methods or service names in backticks
+            only when referencing formal external interfaces.
         -   Keep to 72 characters or fewer without trailing punctuation.
     -   **The Executive `TL;DR:` (Mandatory):**
         -   Immediately below the headline, insert a single 1–2 sentence
@@ -76,30 +76,38 @@ updating the description of an existing change in the relevant tool.
         -   Must be completely understandable by any engineer in under 5 seconds
             without reading the code diff.
     -   **Thematic Capability Bullets (`What's New:` / `Changes:` / `Fixes:`):**
-        -   Structure bullets as capability-oriented features, not dry file
-            diffs or mechanical nuts-and-bolts.
+        -   Synthesize changes into 3–5 punchy bullets focused on architectural
+            intent and user-visible behavior.
+        -   **Forbid Diff Accounting**: Never inventory modified files, internal
+            helper functions, styling pixel adjustments, or internal
+            state/signal names (e.g., avoid listing CSS margin changes, boolean
+            flag additions, or helper function signatures).
         -   **Prohibit Bare Code Leads**: Never start a bullet with a raw file
-            name, class name, or mechanical code edit (e.g., avoid `* Updated
-            session_store.go to...`).
+            name, class name, or mechanical code edit.
         -   **Mandatory Thematic Anchors**: Every bullet MUST lead with a bold,
-            user-visible capability or architectural invariant:
-            -   `* **Interactive Verification Walkthroughs**: ...`
+            capability-oriented anchor or architectural invariant:
+            -   `* **Guided Workspace Onboarding**: ...`
+            -   `* **Proactive Session Validation**: ...`
+            -   `* **Immersive Overlay Presentation**: ...`
             -   `* **Automated Fixture Preparation (Smart Gate)**: ...`
-            -   `* **Zero-Guesswork Navigation**: ...`
-            -   `* **In-Flight Discrepancy Triage**: ...`
         -   **Voice & Tone**:
             -   Active, present-tense verbs (`Reads...`, `Runs...`,
                 `Provides...`, `Evaluates...`).
-            -   Focus on the *what* and *why* rather than internal signal
+            -   Focus on the *what* and *why* (user capability, invariant
+                guarantees, developer commands) rather than internal signal
                 mechanics, local variables, or pixel measurements.
             -   Mention concrete developer-facing commands (e.g., `./run.sh`,
-                `npm run dev`, CLI flags) or URLs where applicable to provide operational
-                clarity.
-            -   Keep bullet lists concise (3–6 punchy items).
-    -   **Side Effects Section (`### Side Effects`):**
-        -   Explicitly document behavioral shifts, operational changes, breaking
-            contracts, downstream impacts, and migration considerations (or
-            state `None`).
+                `npm run dev`, CLI flags) or URLs where applicable to provide
+                operational clarity.
+    -   **Side Effects Section (`### Side Effects` - Strictly Conditional):**
+        -   Include this section **only** when a change introduces genuine
+            breaking API contract changes, database schema migrations,
+            deprecations, or service downtime risks.
+        -   **Omit the section entirely** for standard additive features,
+            internal refactors, UI updates, or bug fixes.
+        -   Never output placeholder text like `None` or `N/A`, and never
+            re-list internal routes, helper wiring, or file touchpoints as side
+            effects.
     -   **TESTED / Verification Section (`### TESTED`):**
         -   Dedicated verification section documenting:
             -   Automated unit and integration test pass counts (e.g., `pytest`,
@@ -110,12 +118,47 @@ updating the description of an existing change in the relevant tool.
                 test artifact links.
             -   Local installation or deployment test commands (`install.sh
                 --target=global` or `npm test`).
+    -   **Intent vs. Accounting Contrast (Few-Shot Reference):**
+
+        ```markdown
+        <!-- BAD: Mechanical Diff Accounting (Anti-Pattern) -->
+        [UI] Update modal styling and session state
+
+        TL;DR: Modified modal_view.tsx and auth_helper.ts to fix styling and token handling.
+
+        Changes:
+        * **modal_view.tsx**: Changed margin-top from 12px to 16px and updated opacity to 0.95.
+        * **auth_helper.ts**: Updated refreshTokenHandler() to check isExpired boolean before dispatching.
+        * **styles/theme.css**: Added `.modal-backdrop-blur` class with 4px Gaussian blur.
+        * **types/session.ts**: Added optional `lastRefreshedAt` timestamp field.
+
+        ### Side Effects
+        None.
+        ```
+
+        ```markdown
+        <!-- GOOD: High-Level Intent & Architecture -->
+        [UI] Add pre-creation agent onboarding introduction flow
+
+        TL;DR: The onboarding modal now guides first-time users through agent workspace configuration with automatic session validation and refined responsive overlay presentation.
+
+        What's New:
+        * **Guided Workspace Onboarding**: Introduces interactive setup steps explaining workspace isolation and default tool privileges.
+        * **Proactive Session Validation**: Refreshes expiring authentication tokens prior to workflow submission without interrupting form state.
+        * **Immersive Overlay Presentation**: Applies consistent backdrop blur and adjusted viewport padding across compact desktop layouts.
+        ```
 -   **Description Update/Creation:** **Crucially, you must then take action to
     create a commit with or update the CL/PR description with the summary you
     generated, based on the user's choice if clarification was sought.** This
     means executing the necessary commands or API calls to set or modify the
     description in the version control or code review system (e.g.,
     GitHub, GitLab).
+    -   **Preserve External Anchors on Amend**: When performing an **Amend**
+        action or updating an existing PR description, preserve issue/ticket tags
+        (`Closes #123`), review links, and durable architectural context.
+        Discard earlier drafts' mechanical file-by-file accounting or stale
+        bullet lists, replacing them with freshly synthesized high-level intent
+        bullets reflecting the overall cumulative diff.
     -   **Always Upload/Push Updates:** Whether creating a **New** commit or
         performing an **Amend** action, you must always immediately upload/push
         the updates to the remote repository (e.g., run `git push`) to ensure
@@ -206,5 +249,6 @@ them).
         output.
     -   **Format:** Always present the link prominently in your response, e.g.:
         `PR/Change created: https://github.com/org/repo/pull/123`
--   **Granularity:** Group related changes into logical bullet points to ensure
-    the description is thorough but readable.
+-   **Granularity:** Synthesize cumulative changes into 3–5 high-signal bullets
+    focused on architectural intent and user-visible behavior. Do not map every
+    touched file or internal helper to an individual bullet.
