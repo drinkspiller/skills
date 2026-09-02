@@ -52,6 +52,16 @@ updating the description of an existing change in the relevant tool.
 -   **Comprehensive Summary Generation (Engineering Broadcast Standard):** Write a
     description that balances high-density executive clarity with technical
     depth, following high-signal engineering communication standards:
+    -   **Structural Ordering Hierarchy:** Enforce the following layout
+        sequence for all generated commit messages and PR descriptions:
+        1.  **Headline / Subject**: Intent-focused summary with domain/type tag.
+        2.  **Brief Overview (`TL;DR:`)**: 1–2 sentence context and guarantees.
+        3.  **Demo / Screencast Link (Conditional)**: Placed directly between
+            overview and bullets (`Demo: https://...`).
+        4.  **Body Bullets**: 3–5 punchy, capability-anchored bullets.
+        5.  **Side Effects (Conditional)**: Breaking changes/migrations only.
+        6.  **TESTED / Verification**: Automated tests and static UI screenshots.
+        7.  **Issue Links & Footers**: Tracker tags (`Closes #123`) and flags.
     -   **Headline Formatting:** A concise, one-line summary of the change.
         -   Prefix the headline with the project or domain tag in square brackets
             (e.g., `[Auth]`, `[Billing]`, `[API]`, `[UI]`).
@@ -75,6 +85,26 @@ updating the description of an existing change in the relevant tool.
             [developer/system guarantee].`
         -   Must be completely understandable by any engineer in under 5 seconds
             without reading the code diff.
+    -   **Demo & Screencast Links (Conditional — High-Visibility Placement):**
+        -   When a demo link, screen recording, Loom, asciinema, or video
+            attachment URL is provided, it **MUST ALWAYS** appear directly
+            between the brief overview paragraph (`TL;DR:`) and the bullet list,
+            separated by single blank lines:
+            ```markdown
+            [Headline / Subject]
+
+            [Brief Overview Paragraph]
+
+            Demo: https://...
+
+            - [Bullet 1]
+            - [Bullet 2]
+            ```
+        -   **Prohibit Buried Demos (Anti-Pattern)**: Never bury demo, video, or
+            screencast links inside the `Verification` / `TESTED` section, after
+            the bullet points, or at the bottom among metadata footers. Visual
+            proof must be immediately visible to reviewers before reading
+            granular bullets.
     -   **Thematic Capability Bullets (`What's New:` / `Changes:` / `Fixes:`):**
         -   Synthesize changes into 3–5 punchy bullets focused on architectural
             intent and user-visible behavior.
@@ -121,7 +151,7 @@ updating the description of an existing change in the relevant tool.
     -   **Intent vs. Accounting Contrast (Few-Shot Reference):**
 
         ```markdown
-        <!-- BAD: Mechanical Diff Accounting (Anti-Pattern) -->
+        <!-- BAD: Mechanical Diff Accounting & Buried Demo (Anti-Pattern) -->
         [UI] Update modal styling and session state
 
         TL;DR: Modified modal_view.tsx and auth_helper.ts to fix styling and token handling.
@@ -134,18 +164,32 @@ updating the description of an existing change in the relevant tool.
 
         ### Side Effects
         None.
+
+        ### TESTED
+        npm test (12 passed)
+        Demo: https://asciinema.org/a/demo12345
+
+        Closes #402
         ```
 
         ```markdown
-        <!-- GOOD: High-Level Intent & Architecture -->
+        <!-- GOOD: High-Level Intent, Architecture & Prominent Demo -->
         [UI] Add pre-creation agent onboarding introduction flow
 
         TL;DR: The onboarding modal now guides first-time users through agent workspace configuration with automatic session validation and refined responsive overlay presentation.
+
+        Demo: https://asciinema.org/a/demo12345
 
         What's New:
         * **Guided Workspace Onboarding**: Introduces interactive setup steps explaining workspace isolation and default tool privileges.
         * **Proactive Session Validation**: Refreshes expiring authentication tokens prior to workflow submission without interrupting form state.
         * **Immersive Overlay Presentation**: Applies consistent backdrop blur and adjusted viewport padding across compact desktop layouts.
+
+        ### TESTED
+        * Unit Tests: `npm test -- --filter=onboarding` (18 passed, 0 failed).
+        * Manual verification on 1280px and 1920px viewports.
+
+        Closes #402
         ```
 -   **Description Update/Creation:** **Crucially, you must then take action to
     create a commit with or update the CL/PR description with the summary you
@@ -248,7 +292,13 @@ them).
     -   For **Git**: Extract the change URL or commit hash from the `git push`
         output.
     -   **Format:** Always present the link prominently in your response, e.g.:
-        `PR/Change created: https://github.com/org/repo/pull/123`
+-   **Strict Structural Sequence:** Ensure every generated summary strictly
+    adheres to the defined ordering hierarchy: Headline -> Brief Overview
+    (`TL;DR:`) -> Demo / Screencast Link (conditional; directly below overview)
+    -> Body Bullets (`What's New:`) -> Side Effects (conditional; breaking only)
+    -> TESTED / Verification (automated test runs, static screenshot URLs) ->
+    Issue Links / Footers (`Closes #123`, metadata tags). Never bury demo video
+    links inside TESTED or footer sections.
 -   **Granularity:** Synthesize cumulative changes into 3–5 high-signal bullets
     focused on architectural intent and user-visible behavior. Do not map every
     touched file or internal helper to an individual bullet.

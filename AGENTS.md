@@ -127,10 +127,12 @@ Process user inputs using the following four-step sequence:
 -   **Conventional Commits**: Format commit messages as `<type>(<scope>): <short
     description>` (e.g., `feat(auth): add session expiry check`, `fix(payment):
     null check`). Focus summaries on architectural intent and user-visible
-    capability rather than mechanical file diffs.
--   **Commit & PR Descriptions**: Synthesize changes into 3–5 punchy capability
-    bullets centered on intent and behavior. Do not inventory touched files,
-    internal helpers, styling pixel tweaks, or local variables.
+-   **Commit & PR Descriptions**: Structure summaries hierarchically: Headline
+    -> Overview paragraph (`TL;DR:`) -> Demo / Screencast Link (conditional;
+    placed directly above bullets) -> 3–5 synthesized capability bullets ->
+    Side Effects (conditional; breaking only) -> TESTED notes -> Issue tags. Do
+    not bury demo/video links in TESTED or footers, and never inventory touched
+    files, internal helpers, styling pixel tweaks, or local variables.
 -   **Safe Pushing**: Use `git commit --amend` and interactive rebase (`git
     rebase -i`) to clean history before sharing. Always push with
     `--force-with-lease` rather than blind `--force`. Preserve trailing newlines
