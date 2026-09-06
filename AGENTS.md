@@ -14,10 +14,10 @@ Process user inputs using the following four-step sequence:
     -   For **question**: Prohibit all write and mutation tools
         (`replace_file_content`, `write_to_file`, `git commit`, `git checkout`,
         `git rebase`, or mutating shell commands). Inspect current state using
-        read-only tools (`grep_search`, `find_by_name`, `view_file`), provide
-        the exact answer with clickable file links, present declarative
-        technical trade-offs without timid hedging, and await an explicit
-        imperative command before modifying code.
+        read-only tools (`grep_search`, `find_by_name`, `view_file`, or CLI
+        queries via `zg query`), provide the exact answer with clickable file
+        links, present declarative technical trade-offs without timid hedging,
+        and await an explicit imperative command before modifying code.
     -   For **command**: Explicitly define scope (what is in-scope and what is
         not in scope). Begin execution of in-scope actions immediately.
     -   For **statement**: Do not call tools; respond naturally and ask
@@ -43,16 +43,37 @@ Process user inputs using the following four-step sequence:
 
 ## 1. Tooling, Search & CLI Execution
 
--   **Tool Hierarchy**: Prefer `rg` over `grep`, `fd` over `find`, `bat
-    --line-range` over `cat`, and `tree -L N` over `ls -R`. Use fixed-string
-    matching (`rg -F`) for literal traces, special characters, and keys.
--   **Output Bounding**: For CLI commands prone to unbounded output (`git log`,
-    `tree`, search tools), restrict length (`git log -n 5`) or pipe results
-    exceeding 50 lines to a temporary file and paginate (`bat --line-range
-    1:40`).
--   **Legacy Fallback**: If modern tools are absent, provide installation
-    instructions for the host platform before falling back to commands with
-    explicit `--exclude-dir` flags.
+-   **Tool Hierarchy**: Prefer `zg` over standalone `rg`, `rg` over `grep`,
+    `fd` over `find`, `bat --line-range` over `cat`, and `tree -L N` over
+    `ls -R`. Route queries by intent:
+    -   *Semantic & Hybrid*: `zg query "<intent + keywords>"` (or MCP
+        `zvec_grep_search`) fuses BM25 and vector search when indexed.
+    -   *Vector*: `zg query --vector "<intent>"` for conceptual inquiries
+        lacking shared terms.
+    -   *Structural & Syntax*: Prefer `ast-grep` (`sg`) for symbol extraction
+        and API surface analysis.
+    -   *Literal & Regex*: Prefer `zg query --rg` (or MCP `zvec_grep_rg`) over
+        `rg` over `grep`. It requires no index and shapes output compactly by
+        file and line span.
+    -   *Exact Strings*: Use fixed-string matching (`zg query --rg -F` /
+        `rg -F` / `grep -F`) for symbols, literal traces, and keys.
+    -   *File Scoping*: Pass glob flags directly (`zg query --rg "<pat>" -g
+        "<glob>"`).
+-   **Index & Privacy Guardrails**: Never silently create (`zg index`), rebuild
+    (`zg index --rebuild`), or remove `.zvec-grep/` without explicit user
+    consent. Default strictly to on-device embeddings
+    (`local/potion-base-16m-v2`); never pass `--allow-remote` or invoke remote
+    embedding endpoints without explicit authorization.
+-   **Output Bounding**: `zg` omits source previews by default and rejects
+    output-altering flags (`--json`, `--count`, `-l`). For CLI commands prone
+    to unbounded output (`git log`, `tree`, search tools), restrict length
+    (`git log -n 5`) or pipe results exceeding 50 lines to a temporary file and
+    paginate (`bat --line-range 1:40`).
+-   **Legacy Fallback**: If `zg`/`rg`/`fd`/`bat` are unavailable, always use
+    explicit `--exclude-dir` and `--exclude` flags. Raw `grep -r .` and `find .`
+    without exclusions are forbidden. If modern tools are absent, provide
+    installation instructions (e.g., `npm install -g @zvec/zvec-grep` for `zg`,
+    requiring Node.js 22+) before falling back to legacy tools.
 -   **Asynchronous Tasks**: Do not poll background tasks in a loop
     (`manage_task status`); rely on reactive wakeup notifications.
 
@@ -65,6 +86,10 @@ Process user inputs using the following four-step sequence:
 -   **Representational Completeness**: State causal rationales ("why"), name
     explicit referents and variables, unpack abstract labels into concrete
     code actions, and state specific operational bounds directly.
+-   **Inquiry & Assumptions**: State assumptions explicitly before coding. If
+    ambiguity exists, present options rather than guessing silently. Never
+    assume acronym definitions; ask for clarification. Replace speculative
+    hedging with declarative engineering trade-offs.
 -   **Interactive Prompts (`ask_question`)**: Keep the `question` field to
     at most one sentence. Present detailed analysis in regular markdown first,
     then invoke the question modal. Frame options in the user's voice using
@@ -92,6 +117,9 @@ Process user inputs using the following four-step sequence:
     if any tool or command fails twice consecutively for the same operation.
 -   **Crash Log Triage**: Always read the tail of a crash log first (`tail -100
     <logfile>`) where fatal exceptions and termination causes reside.
+-   **Framework & DI Triage**: For application server or dependency injection
+    failures, isolate dependency verification, lifecycle hook, and circular
+    binding errors buried under verbose startup logs.
 -   **Skill Auto-Loading**: When investigating any crash, test failure, or
     unexpected error, explicitly load and activate the `diagnose` and
     `systematic-debugging` skills.
@@ -112,6 +140,13 @@ Process user inputs using the following four-step sequence:
 -   **Scope & Style Isolation**: Match surrounding style and idioms exactly.
     Prune imports and variables made unused by your edit; do not touch
     unrelated dead code. Every modified line must trace to the user request.
+-   **Simplicity First**: Prohibit speculative configurability, premature
+    abstractions (e.g., strategy pattern for a single calculation), and
+    defensive error handling for impossible scenarios. Prefer simple linear
+    code.
+-   **Documentation & Comments**: Use the WhyPattern to explain causal
+    rationale, not obvious mechanics; avoid "We". Mandate TSDoc/JSDoc on all
+    exported functions, types, and interfaces.
 -   **TypeScript Standards**: Strict typing required (no `any` catch-alls). Use
     `for...of` loops over raw indexing. Floating promises are forbidden; handle
     rejections explicitly (`await`, `.catch()`). Model conditional data with
@@ -154,3 +189,20 @@ Structure complex technical solutions in four sequential parts:
 
 When creating artifacts, link to them using `file://` URIs and highlight only
 open decisions in chat without re-summarizing artifact contents.
+
+## 8. Situational Skill Protocols
+
+Deep, situational procedures remain external skills rather than bloating the
+core instruction set. Read and activate these skills on demand when encountering
+their domains:
+-   `diagnose` and `systematic-debugging`: Read
+    `.agents/skills/public/diagnose/SKILL.md` and
+    `.agents/skills/public/systematic_debugging/SKILL.md` for hard bugs,
+    performance regressions, or recurring test failures.
+-   `syntax101-infra`: Read `.agents/skills/private/syntax101-infra/SKILL.md`
+    for infrastructure runbooks, DNS/firewall automation, and remote host
+    operations.
+-   `writing-skills` and `skill-opt`: Read
+    `.agents/skills/public/writing_skills/SKILL.md` and
+    `.agents/skills/public/skill-opt/SKILL.md` when authoring, auditing, or
+    benchmarking agent skills.
