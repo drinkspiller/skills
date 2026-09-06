@@ -4,59 +4,25 @@ description: >
   Create distinctive, production-grade frontend interfaces with high design
   quality. Use when building web components, pages, dashboards, React
   components, HTML/CSS layouts, or when styling any web UI. Generates creative,
-  polished code that avoids generic AI aesthetics.
+  polished code that avoids generic AI aesthetics. Delegated to craft-ui.
 ---
 
 # Frontend Design
 
-Create distinctive, production-grade frontend interfaces that avoid generic "AI
-slop" aesthetics. Implement real working code with exceptional attention to
-aesthetic details and creative choices.
+This skill is powered by the **Craft UI** design engineering standard.
 
-## Design Thinking
+When invoked for any frontend design, component authoring, or styling task,
+follow the full specification defined in [craft-ui](../craft_ui/SKILL.md):
 
-Before coding, understand the context and commit to a BOLD aesthetic
-direction: - **Purpose**: What problem does this interface solve? Who uses it? -
-**Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic,
-organic/natural, luxury/refined, playful/toy-like, editorial/magazine,
-brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. -
-**Constraints**: Technical requirements (framework, performance,
-accessibility). - **Differentiation**: What makes this UNFORGETTABLE?
-
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision.
-Bold maximalism and refined minimalism both work — the key is intentionality,
-not intensity.
-
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is: -
-Production-grade and functional - Visually striking and memorable - Cohesive
-with a clear aesthetic point-of-view - Meticulously refined in every detail
-
-## Frontend Aesthetics Guidelines
-
-Focus on: - **Typography**: Choose fonts that are beautiful, unique, and
-interesting. Avoid generic fonts like Arial and Inter; opt for distinctive
-choices. Pair a distinctive display font with a refined body font. - **Color &
-Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency.
-Dominant colors with sharp accents outperform timid, evenly-distributed
-palettes. - **Motion**: Use animations for effects and micro-interactions.
-Prioritize CSS-only solutions. Focus on high-impact moments: one
-well-orchestrated page load with staggered reveals creates more delight than
-scattered micro-interactions. - **Spatial Composition**: Unexpected layouts.
-Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative
-space OR controlled density. - **Backgrounds & Visual Details**: Create
-atmosphere and depth rather than defaulting to solid colors. Apply creative
-forms like gradient meshes, noise textures, geometric patterns, layered
-transparencies.
-
-NEVER use generic AI-generated aesthetics like overused font families (Inter,
-Roboto, Arial), cliched color schemes (purple gradients on white), predictable
-layouts, or cookie-cutter design.
-
-Interpret creatively and make unexpected choices that feel genuinely designed
-for the context. No design should be the same. Vary between light and dark
-themes, different fonts, different aesthetics. NEVER converge on common choices
-across generations.
-
-Match implementation complexity to the aesthetic vision. Maximalist designs need
-elaborate code with extensive animations. Minimalist designs need restraint,
-precision, and careful attention to spacing and typography.
+1.  **The Design Read:** Declare your single-line room reading and set the three
+    calibrated dials (`DESIGN_VARIANCE`, `MOTION_INTENSITY`, `VISUAL_DENSITY`).
+2.  **Concentric Border Radius & Optical Centering:** Enforce
+    $R_{\text{inner}} = \max(0, R_{\text{outer}} - \text{padding})$ and visual
+    centroid shifts for directional glyphs.
+3.  **Tactile Push Physics:** Provide instant $0\text{ms}$ active compression
+    states (`active:translate-y-[1px]` or `active:scale-[0.985]`).
+4.  **The 65-Gate Slop Test:** Fail and rewrite banned AI purple gradients,
+    cliché warm paper palettes, 3-card grid traps, excessive eyebrows, and
+    unearned display serifs.
+5.  **Bounded Two-Pass Verification:** Conduct mechanical and Slop Index audits
+    before delivering code.
