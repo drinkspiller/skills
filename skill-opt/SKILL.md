@@ -154,10 +154,10 @@ persona: Skill Optimizer
 ### Step 4: Execution & Continuous Progress Updates
 
 1.  Launch `run_optimizer.py` in the background (or run directly with streaming output).
-2.  **Mandatory Frequent Progress Streaming:** The agent must NEVER stay silent during execution. Whenever awakened by a 30-second notification timeout, task completion, or log event, the agent must immediately output a visible status summary:
-    -   Current target file, active epoch (e.g., Epoch 1/2), and active phase (Rollout, Reflection, or Validation Gate).
-    -   Real-time score deltas (e.g., "Epoch 1 training rollout completed with score 0.85; reflecting on 1 failure trace...").
-    -   Validation gate decisions (Accepted with score gain vs. Rejected with rollback).
+2.  **Mandatory Frequent Progress Streaming (Behavior-Grouped & Exception-Driven):** The agent must NEVER stay silent during execution. Whenever awakened by a notification timeout, task completion, or log event, immediately output a concise status summary formatted as follows:
+    -   **Progress Gauge & Pass Rate:** Render a visual progress bar (e.g., `Progress: [████████████████░░░░] 26 / 29 scenarios completed (90%)`) and current aggregate pass rate.
+    -   **Active Scenario:** State the currently executing scenario in plain English (e.g., `"Evaluating multi-turn interview on a database schema migration (Turn 4/14)"`), avoiding raw `SCREAMING_SNAKE_CASE` dumps.
+    -   **Exceptions & Failures Only:** Suppress routine passing test rows. List only failing or degraded criteria alongside their qualitative failure reason (e.g., `"- Auth Protocol Inquiry (TRAIN_23): 3/4 passed — Failed: Agent omitted token expiration edge cases"`).
 3.  Maintain execution until all epochs conclude and the final `best_skill.md` is saved.
 
 --------------------------------------------------------------------------------
@@ -165,12 +165,12 @@ persona: Skill Optimizer
 ### Step 5: Report Artifact Generation & Deployment Gate
 
 1.  Read the resulting `best_skill.md` and compute the unified diff against `seed_skill.md`.
-2.  Create a comprehensive comparison report containing:
-    -   **Executive Summary:** Overview of score gains and line count changes.
-    -   **Performance Table:** Baseline vs. Final validation scores and percentage improvement.
-    -   **Key Behavioral Refinements:** Detailed breakdown of resolved failure modes (e.g., modal batching, step ordering, schema gaps).
-    -   **Unified Diff Block:** Complete Markdown diff showing exact deletions and additions.
-3.  Present the report link to the user AND render the Executive Summary table directly inline in the chat response so the user can inspect baseline vs. optimized scores immediately without extra clicks.
+2.  Create a comprehensive comparison report containing the full assertion matrix, before/after trace comparisons, and complete unified diff.
+3.  **Render Final Summary in Chat:** Output a structured chat summary containing:
+    -   **Top-Line Baseline Delta:** Lead with the overall pass rate and prominent percentage improvement over baseline (e.g., `Overall Result: 50 / 54 scenarios passed (92.6%) · **+25.9% over baseline** (36 / 54)`) alongside instruction diff statistics (`+24 lines, -6 lines (3.8% surgical edit)`).
+    -   **Behavioral Health Scorecard Table:** Present a clean Markdown table with columns `Behavioral Discipline | Baseline | Optimized | Target Range | Status` translating raw evaluation metrics into plain-English capabilities (e.g., *Single-Question Pacing*, *Anti-Assumption Guard*, *Consult-First Discipline*, *Devil's Advocate Probing*, *ADR Candidate Detection*, *Probing Depth* with calibrated target `1.0–2.0`).
+    -   **`#### What Changed in Practice`:** Highlight 3–5 concrete, user-visible behavioral improvements explaining what the agent now does or stops doing in plain English.
+    -   **`#### Remaining Gaps`:** Document any remaining failing assertions with their qualitative root cause, followed by the clickable report link.
 4.  Prompt the user for deployment confirmation using `ask_question`:
     -   *Question:* "Would you like to deploy the optimized skill to its original path?"
     -   *Options:*
