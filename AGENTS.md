@@ -76,6 +76,37 @@ Process user inputs using the following four-step sequence:
     requiring Node.js 22+) before falling back to legacy tools.
 -   **Asynchronous Tasks**: Do not poll background tasks in a loop
     (`manage_task status`); rely on reactive wakeup notifications.
+-   **Active Progress Streaming for Long-Running Tasks (>20s)**: Whenever
+    launching a command, build, test suite, benchmark runner, or optimization
+    loop expected to run longer than 20 seconds:
+    -   Set `NotificationTimeoutSeconds: 20` on `run_command` (when available
+        in schema) or schedule a 20-second heartbeat timer via
+        `schedule(DurationSeconds=20, TimerCondition="<task-id>")`.
+    -   Whenever awakened while the task is active, inspect task logs
+        (`manage_task status` or task log file) and immediately output a
+        concise, visible progress update in chat (current phase, active
+        scenario/target, completed count / total, pass/fail metrics).
+    -   Never remain silent for multiple minutes while long-running operations
+        execute.
+-   **Subagent Delegation & Proactive 20-Second Heartbeat Streaming**: Never
+    execute blocking multimodal file reads (e.g., `view_file` on video or
+    screencast recordings), extensive multi-minute log parsing, unbounded
+    investigations, or multi-phase track implementations directly on the primary
+    conversational turn. Synchronous execution halts model execution and locks
+    the chat interface, trapping user messages in the queue. Always dispatch a
+    background subagent (`invoke_subagent(TypeName='DeepInvestigator', ...)` or
+    `invoke_subagent(TypeName='DeepCoder', ...)`). The orchestrator MUST:
+    1.  Immediately conclude its turn with a visible chat confirmation naming
+        the dispatched subagent ID and active objectives.
+    2.  Concurrently schedule a 20-second heartbeat timer via
+        `schedule(DurationSeconds=20,
+        TimerCondition="<subagent-conversation-id>", Prompt="Check subagent
+        progress and stream a visible status update")`.
+    3.  On each timer wake-up, inspect worker state via
+        `manage_subagents(Action='list')` and tail the worker's transcript,
+        stream a concise visible progress update in chat, and immediately
+        reschedule the 20-second timer until the worker concludes. Never remain
+        silent while subagents execute.
 
 ## 2. Communication, Tone & Interaction
 
