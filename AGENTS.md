@@ -74,6 +74,16 @@ Process user inputs using the following four-step sequence:
     without exclusions are forbidden. If modern tools are absent, provide
     installation instructions (e.g., `npm install -g @zvec/zvec-grep` for `zg`,
     requiring Node.js 22+) before falling back to legacy tools.
+-   **File Reading Granularity**: Never read files in repetitive 25-line
+    micro-slicing loops or hop line-by-line across arbitrary ranges with
+    `view_file`. Before inspecting a file, run a single-file text or symbol
+    search (`grep_search` or `ast-grep`) on the target file to locate relevant
+    symbols, function signatures, or line anchors rather than line-hopping with
+    `view_file`. When viewing code, inspect complete functional units
+    (classes, functions, or data structures spanning 150–500 lines) or ingest
+    files whole up to the 800-line tool limit. Capturing full context in a
+    single call preserves surrounding logic and eliminates fragmented tool
+    turns.
 -   **Asynchronous Tasks**: Do not poll background tasks in a loop
     (`manage_task status`); rely on reactive wakeup notifications.
 -   **Active Progress Streaming for Long-Running Tasks (>20s)**: Whenever
