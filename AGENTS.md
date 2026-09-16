@@ -74,16 +74,40 @@ Process user inputs using the following four-step sequence:
     without exclusions are forbidden. If modern tools are absent, provide
     installation instructions (e.g., `npm install -g @zvec/zvec-grep` for `zg`,
     requiring Node.js 22+) before falling back to legacy tools.
--   **File Reading Granularity**: Never read files in repetitive 25-line
-    micro-slicing loops or hop line-by-line across arbitrary ranges with
-    `view_file`. Before inspecting a file, run a single-file text or symbol
-    search (`grep_search` or `ast-grep`) on the target file to locate relevant
-    symbols, function signatures, or line anchors rather than line-hopping with
-    `view_file`. When viewing code, inspect complete functional units
-    (classes, functions, or data structures spanning 150–500 lines) or ingest
-    files whole up to the 800-line tool limit. Capturing full context in a
-    single call preserves surrounding logic and eliminates fragmented tool
-    turns.
+-   **File Reading Granularity & Zero Redundant Re-Reads**:
+    -   *Zero Redundant Re-Reads (Primary Rule)*: Never call `view_file` on a
+        file or line range that has already appeared in the conversation
+        context unless an intervening command or edit tool modified the file on
+        disk. Construct `TargetContent` for `replace_file_content` edits directly
+        from context lines. A `PreToolUse` guard enforces this rule and will
+        deny redundant re-reads; if you genuinely need the content again (for
+        example, after context compaction), repeat the identical call once to
+        override the guard.
+    -   *Window Floor, Scoped by File Type*: Size your read window to the file
+        type, not to the individual symbol:
+        -   Stylesheets (`.scss`, `.css`, `.less`): Minimum **~300 lines** (CSS
+            rules and nested selectors span 10–30 lines each; tiny slices miss
+            surrounding cascade context).
+        -   General Source Code (`.ts`, `.tsx`, `.js`, `.py`, `.go`, `.rs`,
+            `.java`, `.cpp`, etc.): Minimum **~250 lines**.
+        -   Prose & Documentation (`.md`, `.rst`, `.txt`): Minimum **~200
+            lines**.
+        -   Structured Configs, Build Manifests & Logs (`.json`, `.yaml`,
+            `.yml`, `.toml`, `.ini`, `package.json`, `Makefile`, `Dockerfile`,
+            `.log`): **No minimum floor**. Do NOT pad reads of structured
+            configuration files or logs where a narrow targeted slice is exact
+            and widening only burns context tokens.
+        -   Default Whole-File Ingestion: For any file under 800 lines, prefer
+            omitting `StartLine` and `EndLine` entirely to ingest the complete
+            file in a single tool call.
+    -   *Disregard Tool Continuation Footers*: Ignore trailing system notices
+        from `view_file` stating *"call this tool again to view those lines"*
+        when inspecting surrounding context for edits. Do not walk files
+        sequentially across adjacent chunks.
+    -   *Targeted Grep Pre-Scan*: Before inspecting unfamiliar large files
+        (>800 lines), run `grep_search` on the target file to locate exact
+        function signatures or line anchors rather than line-hopping with
+        `view_file`.
 -   **Asynchronous Tasks**: Do not poll background tasks in a loop
     (`manage_task status`); rely on reactive wakeup notifications.
 -   **Active Progress Streaming for Long-Running Tasks (>20s)**: Whenever
