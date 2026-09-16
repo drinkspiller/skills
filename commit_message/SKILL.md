@@ -70,17 +70,21 @@ updating the description of an existing change in the relevant tool.
         -   Model high-level architectural intent or user-visible capability
             rather than low-level implementation mechanics or specific file
             names (e.g., `[Auth] Add pre-creation agent onboarding introduction flow`).
-        -   Wrap referenced public API methods or service names in backticks
-            only when referencing formal external interfaces.
+        -   Do NOT cite design tool node IDs, CSS selectors, or low-level helper
+            functions in the headline. Do not backtick-wrap symbols in the headline.
+            -   Good: `[Auth] Add token refresh interceptor for expired credentials`
+            -   Bad: `[UI] Fix .container-wrapper background #f8f9fa and 8px padding`
         -   Keep to 72 characters or fewer without trailing punctuation.
-    -   **The Executive `TL;DR:` (Mandatory):**
+    -   **High-Level Overview Paragraph (`TL;DR:`):**
         -   Immediately below the headline, insert a single 1–2 sentence
-            `TL;DR:` paragraph.
+            `TL;DR:` paragraph explaining overarching intent.
         -   **Voice & Tone**: Calm, direct, authoritative, and outcome-oriented.
-            State the *human capability* and *system guarantee* unlocked by this
-            change before diving into specifics. Avoid corporate jargon,
-            performative hype, or raw file names.
-        -   **Formula**: `TL;DR: [Project/System] now [core capability /
+            Summarize what changed and why from a subsystem architecture
+            perspective, stating user-visible capabilities or operational trade-offs.
+            Avoid corporate jargon, performative hype, or raw file names.
+        -   **Subsystem Abstraction**: Do NOT cite design tool frame/node IDs,
+            CSS values, hex codes, pixel dimensions, or raw code tokens here.
+        -   **Formula**: `TL;DR: [Project/Subsystem] now [core capability /
             behavioral outcome]—[mechanism 1], [mechanism 2], and
             [developer/system guarantee].`
         -   Must be completely understandable by any engineer in under 5 seconds
@@ -108,10 +112,19 @@ updating the description of an existing change in the relevant tool.
     -   **Thematic Capability Bullets (`What's New:` / `Changes:` / `Fixes:`):**
         -   Synthesize changes into 3–5 punchy bullets focused on architectural
             intent and user-visible behavior.
+        -   **Subsystem-Level Abstraction**: Write at the architectural subsystem
+            level: referencing "the User service", "the database schema", or
+            "the feature carousel container" is encouraged.
+        -   **Strictly Prohibited in Summaries & Bodies**:
+            -   Design canvas / tool node IDs (e.g., `node-id=...`, `6771-37402`).
+            -   CSS hex codes and color values (e.g., `#dadce0`, `#f8f9fa`).
+            -   Pixel or rem dimensions (e.g., `40px`, `8px`).
+            -   CSS class selectors or HTML element tags (e.g., `.landing-carousel-container`, `<div>`).
+            -   Variable names, signal names, and proto/schema field names.
+            -   Touched file lists or mechanistic diff recitations.
         -   **Forbid Diff Accounting**: Never inventory modified files, internal
             helper functions, styling pixel adjustments, or internal
-            state/signal names (e.g., avoid listing CSS margin changes, boolean
-            flag additions, or helper function signatures).
+            state/signal names.
         -   **Prohibit Bare Code Leads**: Never start a bullet with a raw file
             name, class name, or mechanical code edit.
         -   **Mandatory Thematic Anchors**: Every bullet MUST lead with a bold,
@@ -148,46 +161,33 @@ updating the description of an existing change in the relevant tool.
                 test artifact links.
             -   Local installation or deployment test commands (`install.sh
                 --target=global` or `npm test`).
-    -   **Intent vs. Accounting Contrast (Few-Shot Reference):**
+    -   **Subsystem-Level Formatting Contrast (Few-Shot Reference):**
 
         ```markdown
-        <!-- BAD: Mechanical Diff Accounting & Buried Demo (Anti-Pattern) -->
-        [UI] Update modal styling and session state
+        <!-- POOR: Too Granular / Nuts-and-Bolts (Anti-Pattern) -->
+        Add styling to .carousel-container in landing.scss
 
-        TL;DR: Modified modal_view.tsx and auth_helper.ts to fix styling and token handling.
-
-        Changes:
-        * **modal_view.tsx**: Changed margin-top from 12px to 16px and updated opacity to 0.95.
-        * **auth_helper.ts**: Updated refreshTokenHandler() to check isExpired boolean before dispatching.
-        * **styles/theme.css**: Added `.modal-backdrop-blur` class with 4px Gaussian blur.
-        * **types/session.ts**: Added optional `lastRefreshedAt` timestamp field.
-
-        ### Side Effects
-        None.
-
-        ### TESTED
-        npm test (12 passed)
-        Demo: https://asciinema.org/a/demo12345
-
-        Closes #402
+        Update .carousel-container to have background #f8f9fa, border 1px solid #dadce0,
+        border-radius 40px, and padding 8px per Figma node-id 6771-37402. Also adjust
+        dark theme background to #1e1f20 and border to #444746.
         ```
 
         ```markdown
-        <!-- GOOD: High-Level Intent, Architecture & Prominent Demo -->
-        [UI] Add pre-creation agent onboarding introduction flow
+        <!-- PREFERRED: Subsystem-Level Abstraction -->
+        [UI] Add container styling and theme support to landing feature carousel
 
-        TL;DR: The onboarding modal now guides first-time users through agent workspace configuration with automatic session validation and refined responsive overlay presentation.
+        TL;DR: The landing page feature carousel now features a rounded container frame with surface backgrounds, subtle borders, and concentric interior padding aligning light and dark visual hierarchy with landing presentation guidelines.
 
         Demo: https://asciinema.org/a/demo12345
 
         What's New:
-        * **Guided Workspace Onboarding**: Introduces interactive setup steps explaining workspace isolation and default tool privileges.
-        * **Proactive Session Validation**: Refreshes expiring authentication tokens prior to workflow submission without interrupting form state.
-        * **Immersive Overlay Presentation**: Applies consistent backdrop blur and adjusted viewport padding across compact desktop layouts.
+        * **Container Architecture**: Wraps the landing page feature carousel in a rounded container frame with surface backgrounds and subtle borders.
+        * **Theme Adaptability**: Aligns light and dark visual hierarchy with landing presentation guidelines.
+        * **Proportional Spacing**: Implements concentric interior padding across carousel slides.
 
         ### TESTED
-        * Unit Tests: `npm test -- --filter=onboarding` (18 passed, 0 failed).
-        * Manual verification on 1280px and 1920px viewports.
+        * Unit Tests: `npm test -- --filter=carousel` (12 passed, 0 failed).
+        * Manual verification on light and dark themes across 1280px and 1920px viewports.
 
         Closes #402
         ```
@@ -268,8 +268,9 @@ them).
     -   Use horizontal rules (`---`) to separate distinct sections.
     -   Use double asterisks (`**bold**`) for key terms and single asterisks
         (`*italics*`) for emphasis.
-    -   Use backticks for inline code, file names, function names, and variable
-        names (e.g., `processData()`, `main.ts`).
+    -   Use backticks for operational tools, commands, or test suites (e.g.,
+        `npm test`, `--filter=carousel`). Do not backtick-wrap symbols in the
+        headline or leak internal variable/signal names into descriptions.
 -   **Action Implementation:** To apply the description:
     -   Append `MARKDOWN=true` (or the appropriate markdown flag) to the end of
         the generated Markdown summary if required by the code review system.
@@ -299,6 +300,9 @@ them).
     -> TESTED / Verification (automated test runs, static screenshot URLs) ->
     Issue Links / Footers (`Closes #123`, metadata tags). Never bury demo video
     links inside TESTED or footer sections.
--   **Granularity:** Synthesize cumulative changes into 3–5 high-signal bullets
-    focused on architectural intent and user-visible behavior. Do not map every
-    touched file or internal helper to an individual bullet.
+-   **Granularity & Abstraction Level:** Always write at the architectural
+    subsystem level (e.g., referencing "the User service", "the database schema",
+    or "the feature carousel container"). Never include design tool node IDs
+    (such as Figma node IDs), CSS color hex codes, pixel dimensions, class
+    selectors, variable names, signal names, proto/schema field names, or
+    touched file lists in commit messages.
