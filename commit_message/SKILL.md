@@ -55,11 +55,15 @@ updating the description of an existing change in the relevant tool.
     -   **Structural Ordering Hierarchy:** Enforce the following layout
         sequence for all generated commit messages and PR descriptions:
         1.  **Headline / Subject**: Intent-focused summary with domain/type tag.
-        2.  **Brief Overview (`TL;DR:`)**: 1–2 sentence context and guarantees.
-        3.  **Demo / Screencast Link (Conditional)**: Placed directly between
-            overview and bullets (`Demo: https://...`).
-        4.  **Body Bullets**: 3–5 punchy, capability-anchored bullets.
-        5.  **Side Effects (Conditional)**: Breaking changes/migrations only.
+        2.  **Brief Overview Paragraph (`**TL;DR:**`)**: 1–2 sentence context
+            and guarantees beginning with `**TL;DR:**`.
+        3.  **Media Links: Demo Video / Screencast / Screenshot (Conditional)**:
+            Placed directly between overview and `### Changes` (`Demo: https://...`
+            or `Demo Video: https://...`).
+        4.  **Changes Section Heading (`### Changes`) & Body Bullets**: Preceded
+            by `### Changes`, 3–5 punchy, capability-anchored bullets.
+        5.  **Side Effects (`### Side Effects` — Conditional)**: Breaking
+            changes/migrations only.
         6.  **TESTED / Verification**: Automated tests and static UI screenshots.
         7.  **Issue Links & Footers**: Tracker tags (`Closes #123`) and flags.
     -   **Headline Formatting:** A concise, one-line summary of the change.
@@ -75,31 +79,37 @@ updating the description of an existing change in the relevant tool.
             -   Good: `[Auth] Add token refresh interceptor for expired credentials`
             -   Bad: `[UI] Fix .container-wrapper background #f8f9fa and 8px padding`
         -   Keep to 72 characters or fewer without trailing punctuation.
-    -   **High-Level Overview Paragraph (`TL;DR:`):**
+    -   **Brief Overview Paragraph (`**TL;DR:**`):**
         -   Immediately below the headline, insert a single 1–2 sentence
-            `TL;DR:` paragraph explaining overarching intent.
+            executive summary (separated by a blank line), beginning with a bold
+            `**TL;DR:**` prefix, explaining the primary motivation, user-visible
+            behavior, and architectural context of the change.
         -   **Voice & Tone**: Calm, direct, authoritative, and outcome-oriented.
             Summarize what changed and why from a subsystem architecture
             perspective, stating user-visible capabilities or operational trade-offs.
             Avoid corporate jargon, performative hype, or raw file names.
         -   **Subsystem Abstraction**: Do NOT cite design tool frame/node IDs,
             CSS values, hex codes, pixel dimensions, or raw code tokens here.
-        -   **Formula**: `TL;DR: [Project/Subsystem] now [core capability /
+        -   **Formula**: `**TL;DR:** [Project/Subsystem] now [core capability /
             behavioral outcome]—[mechanism 1], [mechanism 2], and
             [developer/system guarantee].`
         -   Must be completely understandable by any engineer in under 5 seconds
             without reading the code diff.
-    -   **Demo & Screencast Links (Conditional — High-Visibility Placement):**
-        -   When a demo link, screen recording, Loom, asciinema, or video
-            attachment URL is provided, it **MUST ALWAYS** appear directly
-            between the brief overview paragraph (`TL;DR:`) and the bullet list,
-            separated by single blank lines:
+    -   **Media Links Placement (Demo Video & Screenshot — When Provided):**
+        -   When a demo video link (`https://example.com/demos/<id>`), screen
+            recording, or UI screenshot URL (`https://example.com/screenshots/<hash>`)
+            is provided or recorded, it **must always** be placed in the body
+            directly between the brief overview paragraph and the `### Changes`
+            section, preceded and followed by single blank lines:
             ```markdown
             [Headline / Subject]
 
-            [Brief Overview Paragraph]
+            **TL;DR:** [Brief Overview Paragraph]
 
-            Demo: https://...
+            Demo Video: https://...
+            Screenshot: https://...
+
+            ### Changes
 
             - [Bullet 1]
             - [Bullet 2]
@@ -109,17 +119,25 @@ updating the description of an existing change in the relevant tool.
             the bullet points, or at the bottom among metadata footers. Visual
             proof must be immediately visible to reviewers before reading
             granular bullets.
-    -   **Thematic Capability Bullets (`What's New:` / `Changes:` / `Fixes:`):**
-        -   Synthesize changes into 3–5 punchy bullets focused on architectural
-            intent and user-visible behavior.
-        -   **Subsystem-Level Abstraction**: Write at the architectural subsystem
-            level: referencing "the User service", "the database schema", or
-            "the feature carousel container" is encouraged.
+    -   **Changes Section Heading (`### Changes`) & Bullet Point Style (Subsystem-Level Abstraction):**
+        -   Precede the main bullet list with the exact Markdown heading
+            `### Changes`. Strictly ban robotic or AI-generated section
+            headers such as `"Thematic Capabilities"`, `"Thematic Capability
+            Anchors"`, or `"Key Capabilities"`.
+        -   Synthesize changes into 2–4 punchy bullets focused on architectural
+            intent and user-visible behavior rather than low-level code mechanics
+            or nuts-and-bolts implementation details.
+        -   **Focus on What and Why**: Explain the functional outcome and
+            architectural purpose rather than how the code is wired.
+        -   **Subsystem-Level Abstraction**: Refer to architectural components
+            and domain concepts in plain English (e.g., "the User service", "the
+            database schema", "the feature carousel container", "dark mode theme
+            adaptation").
         -   **Strictly Prohibited in Summaries & Bodies**:
-            -   Design canvas / tool node IDs (e.g., `node-id=...`, `6771-37402`).
+            -   Design mockup IDs or canvas/tool node IDs (e.g., `node 6771:37402`).
             -   CSS hex codes and color values (e.g., `#dadce0`, `#f8f9fa`).
             -   Pixel or rem dimensions (e.g., `40px`, `8px`).
-            -   CSS class selectors or HTML element tags (e.g., `.landing-carousel-container`, `<div>`).
+            -   CSS class selectors or HTML element tags (e.g., `.landing__carousel-viewport`, `<div>`).
             -   Variable names, signal names, and proto/schema field names.
             -   Touched file lists or mechanistic diff recitations.
         -   **Forbid Diff Accounting**: Never inventory modified files, internal
@@ -127,8 +145,10 @@ updating the description of an existing change in the relevant tool.
             state/signal names.
         -   **Prohibit Bare Code Leads**: Never start a bullet with a raw file
             name, class name, or mechanical code edit.
-        -   **Mandatory Thematic Anchors**: Every bullet MUST lead with a bold,
-            capability-oriented anchor or architectural invariant:
+        -   **Mandatory Thematic Capability Anchors on Bullets**: Keep bullet
+            lists concise (2–4 punchy items) using bold thematic capability
+            anchors (`* **Interactive Onboarding Sequence**: ...`) or active
+            present-tense verbs (`Adds...`, `Updates...`, `Fixes...`).
             -   `* **Guided Workspace Onboarding**: ...`
             -   `* **Proactive Session Validation**: ...`
             -   `* **Immersive Overlay Presentation**: ...`
@@ -142,15 +162,16 @@ updating the description of an existing change in the relevant tool.
             -   Mention concrete developer-facing commands (e.g., `./run.sh`,
                 `npm run dev`, CLI flags) or URLs where applicable to provide
                 operational clarity.
-    -   **Side Effects Section (`### Side Effects` - Strictly Conditional):**
-        -   Include this section **only** when a change introduces genuine
-            breaking API contract changes, database schema migrations,
-            deprecations, or service downtime risks.
-        -   **Omit the section entirely** for standard additive features,
-            internal refactors, UI updates, or bug fixes.
-        -   Never output placeholder text like `None` or `N/A`, and never
-            re-list internal routes, helper wiring, or file touchpoints as side
-            effects.
+    -   **Side Effects (`### Side Effects` — Conditional):**
+        -   Include ONLY when the change introduces breaking behavioral changes,
+            public API contract deprecations, database schema migrations, or
+            service downtime risks.
+        -   When included, format the heading as `### Side Effects`.
+        -   **Omit the section entirely** if no breaking downstream impacts exist
+            (e.g., for standard additive features, internal refactors, UI updates,
+            or bug fixes). Never output placeholder text like `None` or `N/A`,
+            and never re-list internal routes, helper wiring, or file touchpoints as
+            side effects.
     -   **TESTED / Verification Section (`### TESTED`):**
         -   Dedicated verification section documenting:
             -   Automated unit and integration test pass counts (e.g., `pytest`,
@@ -176,11 +197,11 @@ updating the description of an existing change in the relevant tool.
         <!-- PREFERRED: Subsystem-Level Abstraction -->
         [UI] Add container styling and theme support to landing feature carousel
 
-        TL;DR: The landing page feature carousel now features a rounded container frame with surface backgrounds, subtle borders, and concentric interior padding aligning light and dark visual hierarchy with landing presentation guidelines.
+        **TL;DR:** The landing page feature carousel now features a rounded container frame with surface backgrounds, subtle borders, and concentric interior padding aligning light and dark visual hierarchy with landing presentation guidelines.
 
-        Demo: https://asciinema.org/a/demo12345
+        Demo Video: https://asciinema.org/a/demo12345
 
-        What's New:
+        ### Changes
         * **Container Architecture**: Wraps the landing page feature carousel in a rounded container frame with surface backgrounds and subtle borders.
         * **Theme Adaptability**: Aligns light and dark visual hierarchy with landing presentation guidelines.
         * **Proportional Spacing**: Implements concentric interior padding across carousel slides.
@@ -295,11 +316,12 @@ them).
     -   **Format:** Always present the link prominently in your response, e.g.:
 -   **Strict Structural Sequence:** Ensure every generated summary strictly
     adheres to the defined ordering hierarchy: Headline -> Brief Overview
-    (`TL;DR:`) -> Demo / Screencast Link (conditional; directly below overview)
-    -> Body Bullets (`What's New:`) -> Side Effects (conditional; breaking only)
-    -> TESTED / Verification (automated test runs, static screenshot URLs) ->
-    Issue Links / Footers (`Closes #123`, metadata tags). Never bury demo video
-    links inside TESTED or footer sections.
+    Paragraph (`**TL;DR:**`) -> Media Links: Demo Video / Screenshot
+    (conditional; directly below overview) -> `### Changes` -> Bullets ->
+    `### Side Effects` (conditional; breaking only) -> TESTED / Verification
+    (automated test runs, static screenshot URLs) -> Issue Links / Footers
+    (`Closes #123`, metadata tags). Never bury demo video links inside TESTED or
+    footer sections.
 -   **Granularity & Abstraction Level:** Always write at the architectural
     subsystem level (e.g., referencing "the User service", "the database schema",
     or "the feature carousel container"). Never include design tool node IDs
