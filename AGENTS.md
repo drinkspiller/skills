@@ -37,12 +37,15 @@ Process user inputs using the following four-step sequence:
     -   Never output unprompted post-task self-reinforcement reviews, rules
         compliance summaries, or meta-commentary upon turn completion.
 4.  Efficiency & Problem Solving:
-    -   Communicate the rationale for every action. Consult the user before
-        implementing non-trivial solutions. Do not run pre-change tests or make
-        redundant tool calls.
+    -   Consult the user before implementing non-trivial solutions. Do not run
+        pre-change tests or make redundant tool calls.
 
 ## 1. Tooling, Search & CLI Execution
 
+-   **Non-Interactive Execution & Timeouts**: Always pass non-interactive flags
+    (`-y`, `--yes`, `--no-input`, `CI=true`) to CLI tools and set `PAGER=cat`.
+    Bound potentially hanging commands with explicit timeouts and never run
+    unindexed recursive `grep`/`find` across large trees.
 -   **Tool Hierarchy**: Prefer `zg` over standalone `rg`, `rg` over `grep`,
     `fd` over `find`, `bat --line-range` over `cat`, and `tree -L N` over
     `ls -R`. Route queries by intent:
@@ -110,37 +113,20 @@ Process user inputs using the following four-step sequence:
         `view_file`.
 -   **Asynchronous Tasks**: Do not poll background tasks in a loop
     (`manage_task status`); rely on reactive wakeup notifications.
--   **Active Progress Streaming for Long-Running Tasks (>20s)**: Whenever
-    launching a command, build, test suite, benchmark runner, or optimization
-    loop expected to run longer than 20 seconds:
-    -   Set `NotificationTimeoutSeconds: 20` on `run_command` (when available
-        in schema) or schedule a 20-second heartbeat timer via
-        `schedule(DurationSeconds=20, TimerCondition="<task-id>")`.
-    -   Whenever awakened while the task is active, inspect task logs
-        (`manage_task status` or task log file) and immediately output a
-        concise, visible progress update in chat (current phase, active
-        scenario/target, completed count / total, pass/fail metrics).
-    -   Never remain silent for multiple minutes while long-running operations
-        execute.
--   **Subagent Delegation & Proactive 20-Second Heartbeat Streaming**: Never
-    execute blocking multimodal file reads (e.g., `view_file` on video or
-    screencast recordings), extensive multi-minute log parsing, unbounded
-    investigations, or multi-phase track implementations directly on the primary
-    conversational turn. Synchronous execution halts model execution and locks
-    the chat interface, trapping user messages in the queue. Always dispatch a
-    background subagent (`invoke_subagent(TypeName='DeepInvestigator', ...)` or
-    `invoke_subagent(TypeName='DeepCoder', ...)`). The orchestrator MUST:
-    1.  Immediately conclude its turn with a visible chat confirmation naming
-        the dispatched subagent ID and active objectives.
-    2.  Concurrently schedule a 20-second heartbeat timer via
-        `schedule(DurationSeconds=20,
-        TimerCondition="<subagent-conversation-id>", Prompt="Check subagent
-        progress and stream a visible status update")`.
-    3.  On each timer wake-up, inspect worker state via
-        `manage_subagents(Action='list')` and tail the worker's transcript,
-        stream a concise visible progress update in chat, and immediately
-        reschedule the 20-second timer until the worker concludes. Never remain
-        silent while subagents execute.
+-   **Asynchronous Subagent Delegation**: For heavy multimodal inputs (e.g.,
+    video recordings), indeterminate tasks (>20s), or multi-phase
+    implementations, dispatch a background worker via `invoke_subagent`
+    (instructing the subagent in its `Prompt` to push periodic `[Progress]`
+    notes via `send_message` to the parent alongside its next tool call every
+    ~3–4 turns or ~10 tool calls, before slow operations, and at task
+    boundaries). Yield the turn with a brief confirmation message naming the
+    subagent ID and objectives, echo each incoming `[Progress]` message as a
+    1–2 sentence update in the main chat before yielding, and rely on the
+    platform's reactive wakeup when the subagent completes rather than polling
+    in a loop or scheduling recurring heartbeat timers. When the user asks for
+    progress (e.g., "status?"), inspect worker state via
+    `manage_subagents(Action='list')` and reply immediately with a concise
+    functional summary.
 
 ## 2. Interaction & Philosophy
 
@@ -159,9 +145,34 @@ Process user inputs using the following four-step sequence:
 All agent communications, explanations, reports, and documentation follow the
 Google Developer Documentation Style Guide:
 
+-   **Periodic Progress Notes**: Keep the user informed with periodic, brief
+    progress notes:
+    -   Send a note on the first tool-calling turn, then every ~3–4 turns or ~10
+        tool calls (whichever comes first), before slow operations, and when
+        pivoting.
+    -   Always include the note in the same response as the next tool
+        call(s)—never in a 0-tool response that ends the turn.
+    -   Keep all notes brief: 1–2 short sentences, ~30 words max.
+    -   State how you are starting, or what was done so far and what will happen
+        next.
+    -   Stay silent on routine turns in between; avoid trivial play-by-play
+        unless noting where you are stuck or why you are still digging into the
+        same thing.
+    -   **Subagent-to-Main-Chat Relay**: When running as a subagent, normal text
+        is hidden from the main chat. On every progress-note turn (~every 3–4
+        turns or ~10 tool calls, before slow operations, when pivoting, or upon
+        completing a numbered task), also call
+        `send_message(Recipient="<parent_id>", Message="[Progress] <1–2 sentence note>")`
+        in the same turn alongside your next tool call(s) so you continue
+        working without pausing. When running as a parent agent and awakened by
+        an interim `[Progress]` message from a still-running subagent, echo a 1–2
+        sentence progress note in the main chat and immediately end the turn
+        (0 tool calls) to resume waiting.
 -   **Audience & Person**: Use second person ("you") to address the reader
     directly. Focus on practical developer understanding and actionable
-    clarity.
+    clarity. In technical analyses, option cards, and documentation, avoid
+    `we`/`our` and `you`/`your` in favor of verb-led or explicit-subject
+    phrasing.
 -   **Voice & Tense**: Use active voice and present tense.
 -   **Tone**: Conversational yet professional; friendly, helpful, and
     authoritative without being stiff or patronizing.
