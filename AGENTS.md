@@ -111,22 +111,25 @@ Process user inputs using the following four-step sequence:
         (>800 lines), run `grep_search` on the target file to locate exact
         function signatures or line anchors rather than line-hopping with
         `view_file`.
--   **Asynchronous Tasks**: Do not poll background tasks in a loop
-    (`manage_task status`); rely on reactive wakeup notifications.
--   **Asynchronous Subagent Delegation**: For heavy multimodal inputs (e.g.,
-    video recordings), indeterminate tasks (>20s), or multi-phase
-    implementations, dispatch a background worker via `invoke_subagent`
-    (instructing the subagent in its `Prompt` to push periodic `[Progress]`
-    notes via `send_message` to the parent alongside its next tool call every
-    ~3–4 turns or ~10 tool calls, before slow operations, and at task
-    boundaries). Yield the turn with a brief confirmation message naming the
-    subagent ID and objectives, echo each incoming `[Progress]` message as a
-    1–2 sentence update in the main chat before yielding, and rely on the
-    platform's reactive wakeup when the subagent completes rather than polling
-    in a loop or scheduling recurring heartbeat timers. When the user asks for
-    progress (e.g., "status?"), inspect worker state via
-    `manage_subagents(Action='list')` and reply immediately with a concise
-    functional summary.
+-   **Asynchronous Tasks & Reactive Wakeup**: When a command runs asynchronously
+    in the background, stop calling tools and yield the turn. Never poll via
+    task status tools, log file reads, `ps aux`, or `pgrep`; rely on reactive
+    wakeup notifications. For long-running background commands (>20s), set
+    `NotificationTimeoutSeconds: 20` on the command execution tool and format
+    wakeup updates with the `` `▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ XX%` (Task X of Y)``
+    progress bar line.
+-   **Subagent Delegation**: Never run blocking multimodal reads (e.g., viewing
+    video/screencasts), multi-minute log parsing, unbounded investigations, or
+    multi-phase implementations synchronously on the main thread. Dispatch a
+    specialized subagent (`DeepInvestigator` or `DeepCoder`), instructing the
+    subagent in its prompt to push
+    ``[Progress]\n\n`▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ XX%` (Task X of Y)\n\n<note>`` via
+    `send_message` to the parent alongside its next tool call on Turn 1 and
+    continuously every ~3–4 turns or ~10 tool calls, before slow operations, and
+    when pivoting all the way until final completion—never listing only initial
+    steps. Yield the turn confirming the subagent ID and objectives, and echo
+    each incoming `[Progress]` update in the main chat before yielding (or
+    inspect active subagents when asked for status).
 
 ## 2. Interaction & Philosophy
 
@@ -152,21 +155,32 @@ Google Developer Documentation Style Guide:
         pivoting.
     -   Always include the note in the same response as the next tool
         call(s)—never in a 0-tool response that ends the turn.
-    -   Keep all notes brief: 1–2 short sentences, ~30 words max.
+    -   Format each note with `` `▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ 50%` (Task X of Y)`` on
+        its own line (using a 20-block progress bar with no brackets), followed
+        by a blank line (`\n\n`) and a 1–2 sentence description below (e.g.,
+        `Downloaded the recording and confirmed the local dev server is
+        listening. Extracting 1 fps keyframes next.`). Always precede
+        `` `▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ 50%` (Task X of Y)`` with a blank line
+        (`\n\n`) whenever any text or tool-call steps precede it in the response
+        (i.e., on every progress note after Turn 1, including all subagent relay
+        echoes); omit the leading blank line only when the progress bar is the
+        very first line of Turn 1.
     -   State how you are starting, or what was done so far and what will happen
         next.
     -   Stay silent on routine turns in between; avoid trivial play-by-play
         unless noting where you are stuck or why you are still digging into the
         same thing.
-    -   **Subagent-to-Main-Chat Relay**: When running as a subagent, normal text
-        is hidden from the main chat. On every progress-note turn (~every 3–4
-        turns or ~10 tool calls, before slow operations, when pivoting, or upon
-        completing a numbered task), also call
-        `send_message(Recipient="<parent_id>", Message="[Progress] <1–2 sentence note>")`
-        in the same turn alongside your next tool call(s) so you continue
+    -   **Subagent-to-Main-Chat Relay**: When running as a subagent, your normal
+        text is hidden from the main chat. On every progress-note turn (Turn 1,
+        then continuously every ~3–4 turns or ~10 tool calls, before slow
+        operations, and when pivoting **all the way until final
+        completion**—never stop after initial steps), call
+        `send_message(Recipient="<parent_id>", Message="[Progress]\n\n`▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ XX%` (Task X of Y)\n\n<note>")`
+        in the **same turn** alongside your next tool call(s) so you continue
         working without pausing. When running as a parent agent and awakened by
-        an interim `[Progress]` message from a still-running subagent, echo a 1–2
-        sentence progress note in the main chat and immediately end the turn
+        an interim `[Progress]` message from a still-running subagent, echo the
+        leading `\n\n` blank line, progress bar + task line, `\n\n` blank line,
+        and 1–2 sentence summary in the main chat and immediately end the turn
         (0 tool calls) to resume waiting.
 -   **Audience & Person**: Use second person ("you") to address the reader
     directly. Focus on practical developer understanding and actionable
