@@ -7,10 +7,10 @@ Automated nightly skill optimization daemon for [Antigravity](https://antigravit
 SkillOpt Sleep runs silently overnight (default: `0 2 * * *` / 2:00 AM) to keep your agent skills continuously aligned with real developer habits:
 
 1. **Friction Harvesting**: Scans recent session logs (Antigravity, Claude Code, Cursor) for tool execution errors and developer pushback/corrections.
-2. **Intelligent Problem Synthesis**: Summarizes failure modes into clear, high-level bullets paired with concrete example sub-bullets using an LLM.
-3. **Validation-Gated Optimization**: Evaluates candidate skill edits against train and held-out validation tasks with edit-distance clipping ($\le 35\%$) and semantic checks.
+2. **`/zoom-out` Problem Synthesis**: Summarizes failure modes into plain-English bullets paired with concrete example sub-bullets using `gemini-flash-latest`.
+3. **Validation-Gated Optimization (With Feedback Boundary)**: Evaluates candidate skill edits concurrently (`ThreadPoolExecutor(max_workers=5)`) with top-level `system_instruction` separation, sanitized `optimizer_feedback` (preventing literal test string leakage), and whitespace-normalized token diff clipping ($\le 35\%$).
 4. **Adaptive Delivery**:
-   - If the skill lives in a Git repository: creates a dedicated branch (`skillopt/<skill>-<date>`) and opens a draft GitHub Pull Request (`gh pr create --draft`).
+   - If the skill lives in a Git repository: creates a dedicated branch (`skillopt/<skill>-<date>`) and opens a draft GitHub Pull Request (`gh pr create --draft`) with a `<350`-word `/zoom-out` summary and scorecard table.
    - If outside Git: stages the optimized files and report in `~/.skillopt/staging/<skill>/`.
 
 ---
@@ -57,8 +57,10 @@ If you use GitHub Pull Request creation, ensure `gh auth status` is authenticate
 
 ## Manual Execution (Standalone)
 
-You can run the optimizer directly at any time without waiting for the nightly cron:
+Run the optimizer directly at any time using `run`, `dry-run`, or `harvest` sub-modes and optional `--preferences`:
 
 ```bash
-python3 runner.py --top_k 3 --lookback_hours 48
+python3 runner.py --top_k 3 --lookback_hours 48 --mode run --preferences "Keep under 200 lines"
+python3 runner.py --mode dry-run
+python3 runner.py --mode harvest
 ```

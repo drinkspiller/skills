@@ -6,186 +6,155 @@ persona: Skill Optimizer
 
 # /skill-opt — Interactive Skill & Rule Optimizer
 
-**Purpose:** Interactively optimize any agent skill (`SKILL.md`) or rule file (`*.md`) using automated test generation, trajectory reflection, and validation gating across LLM providers.
+**Purpose:** Interactively optimize any agent skill (`SKILL.md`) or rule file
+(`*.md`) using automated test generation, trajectory reflection, and validation
+gating powered by Google's Gemini models (or Anthropic, OpenAI, and OpenRouter).
 
 --------------------------------------------------------------------------------
 
 ## Architectural Principles
 
-1.  **Decoupled Optimization Roles:**
-    -   **Target Model (e.g. `gemini-2.5-flash`, `claude-3-7-sonnet`, `gpt-4o-mini`):** The runtime agent executing task rollouts to expose instructional blind spots and failure modes.
-    -   **Optimizer Model (e.g. `gemini-2.5-pro`, `claude-3-5-sonnet`, `o3-mini`):** The meta-critic analyzing execution trajectories, diagnosing root-cause ambiguities, and synthesizing surgical Markdown patches.
-2.  **Strict Validation Gating & Syntax Guards:** Candidate edits are only accepted if they pass automated frontmatter/Markdown syntax checks and achieve a strict score improvement on unseen validation tasks.
-3.  **Universal Transcript Harvesting (Zero-UUID):** Automatically mines recent session logs for real developer corrections and failure turns across multiple agent platforms without requiring manual lookup.
-4.  **Algorithmic Safety Modules:** Employs deterministic edit distance bounding (clip <=35% line change), multi-trace batch aggregation, and heuristic step sizing to prevent catastrophic forgetting.
-5.  **Multi-Skill Cross-Alignment:** Ensures interdependent skills (e.g., track planning and implementation) maintain synchronized handoff schemas by actively verifying consumer/producer files.
+1.  **Decoupled Optimization Roles (`/gemini-api` Standard):**
+    -   **Target Model (`gemini-flash-latest`):** Executes task rollouts with the candidate skill placed in the top-level `system_instruction` block (fallback chain: `gemini-3.8-flash` $\rightarrow$ `gemini-3.7-flash` $\rightarrow$ `gemini-3.6-flash`).
+    -   **Judge Model (`gemini-flash-lite-latest` / `gemini-flash-latest`):** Grades execution trajectories against two-tier rubrics using native JSON mode (`responseMimeType: "application/json"`).
+    -   **Optimizer Model (`gemini-pro-latest`):** Analyzes sanitized behavioral feedback and synthesizes surgical Markdown patches (fallback chain: `gemini-3.1-pro-preview` $\rightarrow$ `gemini-3.8-flash`).
+2.  **Optimizer Feedback Boundary (Anti-Reward-Hacking):** The judge separates raw scoring evidence (`audit_rationale`, kept only in the report artifact) from sanitized `optimizer_feedback` (plain-language descriptions of the user-visible behavior gap, stripped of literal test regexes or keywords). Reflection consumes only `optimizer_feedback` so the optimizer never games tests by copying literal check strings into `SKILL.md`.
+3.  **Strict Validation Gating & Semantic Token Guards:** Candidate edits must pass YAML frontmatter/header checks, stay within a $\le 35\%$ whitespace-normalized token diff budget, respect the $\le 1.20$ token bloat cap, and achieve a multi-seed statistically significant improvement on held-out validation tasks with zero `[INVARIANT]` vetoes.
+4.  **Automated Transcript Harvesting (Zero-UUID):** Mines recent session logs across Antigravity, Claude Code, and Cursor for real developer corrections and tool errors without manual lookup.
+5.  **`/zoom-out` Plain-Language Communication:** All chat outputs—pre-flight test plans, 20-second progress bars, and final summaries—lead with a plain-English Bottom Line Up Front (BLUF), a compact ASCII mental model flow ($\le 5$ nodes), and a 3-Pillar breakdown (*The Problem*, *The Fix*, *The Result & Trade-Off*). Statistical proofs ($t$-scores, seed variance, diff ratios, raw scenario IDs) live in the background Proof-of-Verification (POV) artifact rather than cluttering chat.
 
 --------------------------------------------------------------------------------
 
 ## Protocol
 
-### Step 1: Target Ingestion & Verification
+### Step 1: Intent Routing, Target Ingestion & House Rules
 
-1.  Identify the target skill, rule path, directory, or multi-skill bundle requested by the user.
-2.  If no path was provided, ask: *"Which skill or rule file(s) would you like to optimize? Please provide the file path(s), directory, or skill name."*
-3.  **Directory & Descendant Discovery:**
-    -   If the user provides a directory path:
-        -   Scan the directory recursively for all descendant `SKILL.md` files and `*.md` rule files.
-        -   Present the list of all discovered descendant files in chat.
-        -   Prompt the user using `ask_question`:
-        -   *Question:* "Directory contains N skills/rules. How should we proceed?"
-        -   *Options:*
-            -   `"(Recommended) Run batch optimization across all N discovered skills/rules"`
-            -   `"Let me select specific files from the list"`
-            -   `"Cancel"`
-4.  **Absolute Path Resolution:** Resolve all confirmed target path(s) to strict absolute paths.
-5.  Read each target file completely to ingest its existing frontmatter, behavioral steps, tool calls, and lifecycle constraints.
+1.  **Natural-Language Intent & Sub-Mode Routing:**
+    Infer the requested action and any inline house rules (`--preferences`) from the user's prompt:
+    -   **`run` (Full Optimization — Default):** Requests to optimize, improve, or refine a skill/rule file execute the full multi-epoch loop (Steps 1–6).
+    -   **`dry-run` (Baseline Audit / Preview):** Requests to preview, audit, or *"show what could be improved"* (as well as ambiguous optimization requests) execute Steps 1–3, run only the baseline evaluation pass, and present a `/zoom-out` diagnostic scorecard **without** running mutation epochs or modifying live files.
+    -   **`harvest` (Session Friction Inspection):** Requests to inspect mistakes or *"see what failed in recent sessions"* scan session transcripts (Step 2.1) and output a plain-English `/zoom-out` friction digest without launching rollouts.
+    -   **Inline House Rules (`--preferences`):** Preserve any explicit constraints stated by the user (e.g., *"keep under 200 lines"*, *"avoid first-person plural we/our"*) and inject them into both the `[INVARIANT]` rubric tier and the optimizer reflection prompt. Do not invent paths, skill names, or configuration values that the user did not provide.
+2.  **Identify & Resolve Target Path(s):**
+    -   If no target skill, rule file, or directory was specified, ask: *"Which skill or rule file(s) would you like to optimize? Please provide the file path(s), directory, or skill name."*
+    -   **Directory Discovery:** If given a directory path (e.g., `.agents/skills/` or `.agents/rules/`), scan for descendant `SKILL.md` and `*.md` rule files, list them in chat, and prompt via `ask_question` (`"(Recommended) Run batch optimization across all N discovered skills/rules"`, `"Let me select specific files"`, `"Cancel"`).
+    -   Resolve all confirmed target paths to strict absolute paths and read each file completely (plus any interdependent producer/consumer skills to verify handoff schemas).
 
 --------------------------------------------------------------------------------
 
-### Step 2: Automated Eval Synthesis & Targeted Transcript Mining
+### Step 2: Automated Transcript Mining & Test Matrix Synthesis
 
-1.  **Universal Multi-Platform Transcript Discovery & Aggregation:**
-    -   Automatically probe common agent transcript and session log locations across tools:
+1.  **Universal Multi-Platform Transcript Discovery:**
+    -   Automatically scan existing session log directories (merging and deduplicating across all detected platforms without interrupting the user unless no logs exist and custom input is needed):
         -   **Antigravity**: `<appDataDir>/brain/` or `~/.gemini/antigravity/brain/`
         -   **Claude Code**: `~/.claude/projects/`, `~/.claude/transcripts/`, `~/.claude/sessions/`
-        -   **Cursor / Windsurf / VS Code Copilot**: `~/.cursor/`, `~/.config/Code/User/globalStorage/`, `.vscode/`
-        -   **Local Workspace / CLI**: `./.sessions/`, `./logs/`, `~/.skillopt/logs/`
-    -   **Handling Multiple Detected Platforms:**
-        -   If logs are detected across multiple platforms:
-        -   Present the detected platforms and prompt via `ask_question`:
-            -   *Question:* "Detected session logs across multiple platforms. How should we harvest friction?"
-            -   *Options:*
-                -   `"(Recommended) Harvest and merge friction turns across all detected platforms"`
-                -   `"Let me select specific platforms from the list"`
-                -   `"Skip log harvesting and synthesize from skill contract only"`
-        -   When merging, deduplicate identical friction traces and synthesize a unified training set.
-    -   **Single Platform or Custom Path:**
-        -   If exactly one log directory is detected, automatically scan it for turns referencing the target skill.
-    -   **Graceful Fallback When No Log Directory Exists:**
-        -   If no log directory is detected, prompt via `ask_question`:
-            -   *Question:* "No default session logs detected. How would you like to build test scenarios?"
-            -   *Options:*
-                -   `"(Recommended) Auto-synthesize edge cases from the skill contract (no logs needed)"`
-                -   `"Specify a custom transcript directory or log file"`
-                -   `"Paste a recent failure or correction snippet manually"`
-        -   If the user provides a custom path or snippet, ingest it; otherwise proceed with pure contract-driven synthesis.
-2.  **Deconstruct the Behavioral Contract:** Analyze the target file to identify:
-    -   Mandatory prerequisite checks and inputs.
-    -   Interactive flow requirements (e.g., `ask_question` formatting, report-first ask-second).
-    -   Tool calling protocols and sequential stop barriers.
-    -   Output artifact schemas and file modification constraints.
-3.  **Multi-Skill Schema Check (Interdependent Bundles):**
-    -   If optimizing interdependent skills (e.g., producer and consumer skills), read the related skill files.
-    -   Cross-reference output schemas against consumer expectations to prevent handoff regressions.
-4.  **Synthesize Train & Val Datasets:** Auto-generate 2–3 training scenarios (combining mined transcript turns with synthetic edge cases) and 1–2 held-out validation scenarios in distinct technical domains:
-    -   Each scenario must define an `id`, `prompt`, and 4–6 discrete `eval_criteria` assertions.
-5.  **Present Matrix in Chat:** Output the full generated test matrix in your response message body formatted as a clean Markdown table detailing the scenario prompt, target behavior, source (Mined vs. Synthetic), and assertion criteria.
-6.  **Interactive Elicitation:** Invoke `ask_question` to confirm the test matrix:
-    -   *Question:* "Would you like to add any custom test scenarios or target specific failure cases?"
-    -   *Options:*
-        -   `"(Recommended) Proceed with the generated test matrix"`
-        -   `"I want to add custom test scenarios"`
-        -   `"Refine the existing assertions"`
-7.  If the user provides custom scenarios, append them to the dataset splits.
+        -   **Cursor / VS Code Copilot**: `~/.cursor/`, `~/.config/Code/User/globalStorage/`, `.vscode/`
+        -   **Local Workspace**: `./.sessions/`, `./logs/`, `~/.skillopt/logs/`
+    -   Normalize extracted friction turns into a unified schema (`timestamp`, `platform`, `target_skill`, `trigger_prompt`, `failing_turn`, `user_correction`, `error_signal`) and group into orthogonal failure categories.
+    -   If no log directories exist (or zero turns reference the target skill), automatically fall back to synthesizing test scenarios from the skill's behavioral contract.
+2.  **Synthesize Train & Val Datasets (Cardinality & Adversarial Floor):**
+    -   **Minimum Sample Size Floors:** Generate at least **6 training tasks** (`|D_train| >= 6`) and **4 held-out validation tasks** (`|D_val| >= 4`) across disjoint technical domains and at least 2 orthogonal failure categories.
+    -   **Adversarial Negative Probe Floor:** At least **40% of all scenarios** must be adversarial negative probes testing boundary violations, malformed inputs, or forbidden tool calls.
+    -   **Two-Tier Assertion Rubrics:** Partition each scenario's 4–6 discrete `eval_criteria` into:
+        -   `[INVARIANT]`: Hard veto power ($S_{\text{task}} = 0.0$ if any invariant fails). Verifies strict retention of negative prohibitions, consult-first gates, and read-only guardrails.
+        -   `[QUALITY]`: Scalar partial credit ($0.0$ to $1.0$) for formatting, completeness, and tone:
+            $$S_{\text{task}} = \mathbb{I}(\text{all INVARIANTS pass}) \times \left( \frac{1}{N_{\text{qual}}} \sum_{j=1}^{N_{\text{qual}}} Q_j \right)$$
 
 --------------------------------------------------------------------------------
 
-### Step 3: Workspace Environment, Provider & Runner Setup
+### Step 3: Unified Pre-Flight Gate & `/gemini-api` Runner Generation
 
-1.  **Provider Selection & Environment Key Check:**
-    -   Ask the user which model provider they prefer:
-        -   `Google Gemini` (Default: Target `gemini-2.5-flash`, Optimizer `gemini-2.5-pro`, Key: `GEMINI_API_KEY`)
-        -   `Anthropic` (Target `claude-3-7-sonnet`, Optimizer `claude-3-5-sonnet`, Key: `ANTHROPIC_API_KEY`)
-        -   `OpenAI` (Target `gpt-4o-mini`, Optimizer `gpt-4o` or `o3-mini`, Key: `OPENAI_API_KEY`)
-        -   `OpenRouter / Custom API` (Custom target/optimizer model names, Key: `OPENROUTER_API_KEY`)
-    -   **Environment Variable Detection & Persistence Flow:**
-        -   Check `os.environ` for the provider's key (e.g. `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`).
-        -   **If an environment variable exists:**
-        -   Prompt via `ask_question`:
-            -   *Question:* "Found active {PROVIDER}_API_KEY in environment. Use this key?"
-            -   *Options:*
-                -   `"(Recommended) Yes, use the existing environment variable"`
-                -   `"No, I want to provide a different key for this session"`
-        -   **If NO environment variable exists (or user wants to supply a different key):**
-        -   Solicit the API key from the user.
-        -   Prompt via `ask_question`:
-            -   *Question:* "Persist this API key to your environment for future sessions?"
-            -   *Options:*
-                -   `"(Recommended) Yes, export to ~/.bashrc for future sessions"`
-                -   `"No, keep it local to this session only (.env in scratch)"`
-        -   If the user selects export, append `export <PROVIDER>_API_KEY="<key>"` to their `~/.bashrc`.
-    -   Store the active key in a local `.env` file within the scratch directory or reference `os.environ["<PROVIDER>_API_KEY"]`. Never embed keys in version-controlled files.
-2.  **Suggest Workspace Directory or Detect Existing Session:**
-    -   If the user provides an existing session directory, enter **Session Resumption Mode** (see §3.5).
-    -   Otherwise, propose a new dedicated scratch path: `.scratch/skillopt_<slug>_<timestamp>/`
-3.  **Confirm Workspace Path:** Invoke `ask_question`:
-    -   *Question:* "Where should the optimization session run?"
-    -   *Options:*
-        -   `"(Recommended) Use suggested scratch path: <suggested_path>"`
-        -   `"Resume/re-run an existing session directory"`
-        -   `"Specify a custom workspace directory"`
-4.  **Generate Harness Files & Algorithmic Guard Modules:**
-    -   **Self-Contained Runner (Default — Zero External Clones):**
-        -   SkillOpt generates a self-contained Python script (`run_optimizer.py`) directly in the scratch directory using Python's standard library (`urllib.request`, `json`, `re`, `difflib`).
-        -   `skills/seed_skill.md`: A pristine copy of the original target file.
-        -   `tasks/train.jsonl`: Formatted training scenarios and rubrics.
-        -   `tasks/val.jsonl`: Formatted held-out validation scenarios.
-        -   `run_optimizer.py` implements:
-        -   **Pre-Flight Key Validation:** Performs an immediate probe against the selected provider's endpoint upon startup. If the key is missing, empty, or returns an authentication error (400/401/403), halts immediately with: `sys.exit("ERROR: Invalid or missing API key. Set <PROVIDER>_API_KEY before running.")`.
-        -   **Frontmatter & Syntax Validation Guard:** Pre-validates candidate mutations before running validation rollouts. Ensures valid YAML frontmatter (`name:`, `description:` present) and non-truncated Markdown headers. Discards malformed mutations automatically.
-        -   **Deterministic Edit Distance Bounding (Lightweight `clip`):** Computes line diff ratios using `difflib`. Automatically rejects candidate mutations that delete or modify more than **35% of existing lines** in a single epoch or drop required markdown headers, preventing destructive hallucinations without spending extra API tokens.
-        -   **Multi-Trace Batch Aggregation (Lightweight `aggregate`):** When multiple task rollouts fail in a training batch, concatenates all failed trajectory traces and assertion violations into a single unified reflection prompt, synthesizing one cohesive patch that addresses all failure modes simultaneously.
-        -   **Heuristic Step Sizing (Lightweight `lr_autonomous`):** Dynamically injects granularity directives into the reflection prompt based on current validation performance:
-            -   *Baseline score < 0.70:* Directs the model to perform structural additions, missing procedural steps, and prerequisite guards.
-            -   *Baseline score ≥ 0.70:* Directs the model to perform minimal surgical edits (targeted phrasing, single-line constraint additions) while strictly preserving all working sections.
-        -   Exponential backoff retry handling on API endpoints.
-        -   Rollout -> Multi-Trace Aggregated Reflection -> Syntax/Clip Guard -> Validation Gating loop across 2 epochs.
-    -   **Upstream SkillOpt Repo Clone (Optional / WebUI / Sleep):**
-        -   If the user explicitly asks to run upstream Microsoft SkillOpt tools (e.g., launching `skillopt_webui` or running `skillopt_sleep`), the agent checks if `https://github.com/microsoft/SkillOpt.git` exists locally in `~/.config/skillopt_repo` or the scratch workspace.
-        -   If missing, it runs `git clone https://github.com/microsoft/SkillOpt.git` and installs dependencies (`pip install -e .[webui]`) before launching.
-5.  **Session Resumption & Script Updates:**
-    -   When re-running or resuming an existing session:
-        -   **Cumulative Checkpointing:** Set `seed_skill.md` to the previous `best_skill.md` so new epochs build upon prior improvements rather than resetting to the original draft.
-        -   **Dataset & Parameter Edits:** Allow appending new tasks to `train.jsonl` or editing `run_optimizer.py` (e.g., adjusting `num_epochs`, `max_edit_tokens`, or prompt constraints) without regenerating the entire workspace.
+1.  **Silent Environment & Key Resolution:**
+    -   Auto-detect `GEMINI_API_KEY` from `os.environ` or shell profiles (`~/.bashrc`, `~/.profile`, `~/.zshrc`)—or `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` if the user requested a non-Gemini provider.
+    -   Only prompt for an API key if no valid key is discoverable in the environment.
+    -   Default the scratch workspace to `.scratch/skillopt_<slug>_<timestamp>/` (or enter cumulative **Session Resumption Mode** setting `seed_skill.md` = `best_skill.md` if an existing session directory was specified).
+2.  **Present Unified `/zoom-out` Pre-Flight Plan & Single Launch Modal:**
+    Instead of asking multiple serial setup modals, output a single scannable pre-flight overview in chat before calling `ask_question` once:
+    -   **Bottom Line Up Front (Plain English):** 1–2 sentences summarizing what skill is being tested, what recurring friction or blind spots were found, and the active model setup (`gemini-flash-latest` target / `gemini-pro-latest` critic).
+    -   **Mental Model Flow:**
+        ```text
+        [Mined Friction + Contract Rules] ──► [10 Test Scenarios] ──► [Validated Skill Update]
+        ```
+    -   **Plain-Language Test Matrix Table:** Render a clean Markdown table in chat with columns `Split | Scenario | What the User Asks | Expected Agent Behavior (Plain English) | Source` (avoiding raw regexes or mathematical notation in chat).
+    -   **Single Launch Gate (`ask_question`):**
+        -   *Question:* "How should we run this optimization plan?"
+        -   *Options:*
+            -   `"(Recommended) Launch full optimization with this test matrix"`
+            -   `"Run baseline dry-run only (score current skill without editing)"`
+            -   `"Customize test scenarios, assertions, or model provider"`
+3.  **Generate Self-Contained `/gemini-api` Harness (`run_optimizer.py`):**
+    Write `skills/seed_skill.md`, `tasks/train.jsonl`, `tasks/val.jsonl`, and `run_optimizer.py` in the scratch directory using Python 3 standard library modules (`urllib.request`, `concurrent.futures`, `json`, `re`, `difflib`):
+    -   **`/gemini-api` Payload & Fallback Architecture:**
+        -   Endpoint: `https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}`.
+        -   **Top-Level `system_instruction`:** Pass the candidate `SKILL.md` text inside `payload["system_instruction"] = {"parts": [{"text": skill_text}]}`—never concatenate skill instructions into `contents`.
+        -   **Native JSON Mode on Judge Calls:** Set `payload["generationConfig"]["responseMimeType"] = "application/json"` on all judge calls so the judge deterministically returns `{"passed": bool, "invariant_veto": bool, "score": float, "optimizer_feedback": str, "audit_rationale": str}`.
+        -   **Hierarchical Model Fallback & Backoff:**
+            -   Target role: `gemini-flash-latest` $\rightarrow$ `["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"]`.
+            -   Judge role: `gemini-flash-lite-latest` $\rightarrow$ `["gemini-flash-latest", "gemini-3.8-flash"]`.
+            -   Optimizer role: `gemini-pro-latest` $\rightarrow$ `["gemini-3.1-pro-preview", "gemini-3.8-flash"]`.
+            -   On HTTP `404` or `503`, immediately break to the next fallback model. On HTTP `429` or timeout (`timeout=90`), sleep `2 ** attempt` seconds. Guard `candidates[0].content.parts` and log `finishReason` if empty.
+        -   **Concurrent Batch Rollouts:** Execute task rollouts and judge calls in parallel using `concurrent.futures.ThreadPoolExecutor(max_workers=5)`.
+    -   **Algorithmic Safety & Statistical Gating Modules:**
+        -   **Pre-Flight Key Probe:** Verify API connectivity before starting rollouts; halt cleanly on `400`/`401`/`403`.
+        -   **Deflated Baseline Shield:** Re-measure baseline if initial validation score is `< 0.500` or if transport errors occur; abort if repeated baselines diverge by `> 0.200`.
+        -   **Optimizer Feedback Boundary:** Strip raw `eval_criteria` regexes and internal check strings from reflection prompts; pass only the judge's plain-language `optimizer_feedback` descriptions of the behavioral failure.
+        -   **Whitespace-Normalized Semantic Token Diff Guard (`clip <= 0.35`):** Compute `1.0 - SequenceMatcher(None, base_tokens, cand_tokens).ratio()` on whitespace-split tokens (`re.split(r"\s+", text.strip())`) so 80-column Markdown wrapping does not trigger false rejections. Reject mutations with token diff ratio `> 0.35` or broken YAML frontmatter/headers.
+        -   **Anti-Verbosity Token Bloat Guard:** Reject candidates where $R_{\text{tokens}} = \text{Tokens}(\text{cand}) / \text{Tokens}(\text{seed}) > 1.20$ unless validation score improves by $\ge +0.150$ with zero invariant vetoes.
+        -   **Heuristic Step Sizing (`lr_autonomous`):** Use structural additions when baseline validation $< 0.70$, and minimal surgical phrasing edits when baseline $\ge 0.70$.
+        -   **Multi-Seed Statistical Gate ($K \ge 3$ seeds):** Promote a candidate if and only if $\text{LB}(S_{\text{cand}}) = \bar{S}_{\text{cand}} - t_{0.10, K-1} \cdot \frac{s_{\text{cand}}}{\sqrt{K}} > \bar{S}_{\text{baseline}}$ and $\forall k \in [1, K], \text{Vetoes}_k = 0$. Record any rejected epoch candidates and their rejection reasons in `skillopt_report.json`.
 
 --------------------------------------------------------------------------------
 
-### Step 4: Execution & Continuous Progress Updates
+### Step 4: Background Execution & `/zoom-out` Progress Updates
 
-1.  Launch `run_optimizer.py` in the background (or run directly with streaming output).
-2.  **Mandatory Frequent Progress Streaming (Behavior-Grouped & Exception-Driven):** The agent must NEVER stay silent during execution. Whenever awakened by a notification timeout, task completion, or log event, immediately output a concise status summary formatted as follows:
-    -   **Progress Gauge & Pass Rate:** Render a visual progress bar (e.g., `Progress: [████████████████░░░░] 26 / 29 scenarios completed (90%)`) and current aggregate pass rate.
-    -   **Active Scenario:** State the currently executing scenario in plain English (e.g., `"Evaluating multi-turn interview on a database schema migration (Turn 4/14)"`), avoiding raw `SCREAMING_SNAKE_CASE` dumps.
-    -   **Exceptions & Failures Only:** Suppress routine passing test rows. List only failing or degraded criteria alongside their qualitative failure reason (e.g., `"- Auth Protocol Inquiry (TRAIN_23): 3/4 passed — Failed: Agent omitted token expiration edge cases"`).
-3.  Maintain execution until all epochs conclude and the final `best_skill.md` is saved.
+1.  Launch `run_optimizer.py` in the background using `run_command` with `WaitMsBeforeAsync: 5000` and `NotificationTimeoutSeconds: 20`.
+2.  Concurrently arm a 20-second conditional timer via `schedule(DurationSeconds=20, TimerCondition="<task-id>", Prompt="Check optimizer progress and emit a progress bar update")`.
+3.  **`/zoom-out` 20-Second Progress Format:**
+    On each 20-second wakeup while the task is running, inspect the log (`view_file` or `manage_task status`), re-arm the 20-second `schedule` timer in the same turn, and output a concise, plain-language update using the global **20-block unbracketed progress bar**:
+
+    ```markdown
+    `▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░ 60%` (Task 2 of 3: Epoch 1 Validation — 10/16 scenarios)
+
+    Baseline passed 7 of 10 scenarios but missed the pre-release test verification and clean working-tree checks. Testing a 5-line update on held-out validation scenarios next.
+    ```
+
+    -   **Plain-English Exception-Driven Telemetry:** Collapse passing noise into the progress bar. State in 1–2 plain sentences what was just learned or fixed and what happens next, without dumping internal task IDs (`VAL_06`, `TRAIN_34`), regexes, or timer boilerplate.
 
 --------------------------------------------------------------------------------
 
-### Step 5: Report Artifact Generation & Deployment Gate
+### Step 5: `/zoom-out` Final Report & Deployment Gate
 
-1.  Read the resulting `best_skill.md` and compute the unified diff against `seed_skill.md`.
-2.  Create a comprehensive comparison report containing the full assertion matrix, before/after trace comparisons, and complete unified diff.
-3.  **Render Final Summary in Chat:** Output a structured chat summary containing:
-    -   **Top-Line Baseline Delta:** Lead with the overall pass rate and prominent percentage improvement over baseline (e.g., `Overall Result: 50 / 54 scenarios passed (92.6%) · **+25.9% over baseline** (36 / 54)`) alongside instruction diff statistics (`+24 lines, -6 lines (3.8% surgical edit)`).
-    -   **Behavioral Health Scorecard Table:** Present a clean Markdown table with columns `Behavioral Discipline | Baseline | Optimized | Target Range | Status` translating raw evaluation metrics into plain-English capabilities (e.g., *Single-Question Pacing*, *Anti-Assumption Guard*, *Consult-First Discipline*, *Devil's Advocate Probing*, *ADR Candidate Detection*, *Probing Depth* with calibrated target `1.0–2.0`).
-    -   **`#### What Changed in Practice`:** Highlight 3–5 concrete, user-visible behavioral improvements explaining what the agent now does or stops doing in plain English.
-    -   **`#### Remaining Gaps`:** Document any remaining failing assertions with their qualitative root cause, followed by the clickable report link.
-4.  Prompt the user for deployment confirmation using `ask_question`:
-    -   *Question:* "Would you like to deploy the optimized skill to its original path?"
-    -   *Options:*
-        -   `"(Recommended) Approve and update original file in-place"`
-        -   `"Keep optimized file in scratch directory only"`
-        -   `"Run another optimization epoch with adjusted criteria"`
-5.  **Handling Re-Runs from the Deployment Gate:**
-    -   If the user selects `"Run another optimization epoch with adjusted criteria"`, elicit what parameters or test criteria should be adjusted, update `tasks/train.jsonl` or `run_optimizer.py` in-place, set `seed_skill.md` = `best_skill.md`, and re-launch Step 4.
+1.  **Write Formal Proof-of-Verification (POV) Artifact (`skillopt_report_<slug>.md`):**
+    Store all detailed technical evidence in the artifact file: sample sizes (`|D_train|`, `|D_val|`, $K$ seeds), Student's $t$ confidence intervals, `[INVARIANT]` veto audits, token growth ($R_{\text{tokens}}$) and semantic diff ratios, rejected epoch diagnostics, before/after trace comparisons, and the full unified diff.
+2.  **Render `/zoom-out` Summary in Chat (<350 Words, Scannable in <15s):**
+    Keep the in-chat summary high-level, plain-language, and free of statistical clutter:
+    -   **Bottom Line Up Front (Plain English):** 1–2 sentences stating what changed in the skill and the overall validation pass-rate improvement (e.g., *"Updated `git-release` so the agent always runs tests before creating a tag and verifies a clean working tree. Held-out pass rate improved from **33% to 100%** (+67% over baseline) with zero regressions."*).
+    -   **Mental Model Flow (Compact ASCII, $\le 5$ nodes, $\le 4$ lines):**
+        ```text
+        [Failure Mode Observed] ──► [Skill Instruction Updated] ──► [New Agent Behavior]
+        ```
+    -   **The 3-Pillar Breakdown:**
+        -   **The Problem:** What mistake or blind spot the agent exhibited on baseline tasks.
+        -   **The Fix:** What specific rule or clarification was added to `SKILL.md` in plain conversational language.
+        -   **The Result & Trade-Off:** What improves in day-to-day usage, confirming all existing guardrails held (`0 safety/invariant regressions`) and showing net line change (e.g., `+8 lines, -2 lines`).
+    -   **Before vs. After Scorecard Table:** Render a clean Markdown table in chat with plain-English capability rows:
+        `Capability | Before | After | Status`
+    -   **What You Can Safely Ignore Right Now:** A 1-line link to `skillopt_report_<slug>.md` for the multi-seed confidence math, rejected epoch notes, and raw unified diff.
+3.  **Deployment Gate (`ask_question`):**
+    -   If running in `dry-run` mode, stop after presenting the baseline `/zoom-out` scorecard and ask if the user wants to launch optimization epochs.
+    -   Otherwise, prompt via `ask_question`:
+        -   *Question:* "Would you like to deploy the optimized skill to its original path?"
+        -   *Options:*
+            -   `"(Recommended) Approve and update original file in-place"`
+            -   `"Keep optimized file in scratch directory only"`
+            -   `"Run another optimization epoch with adjusted criteria"`
 
 --------------------------------------------------------------------------------
 
 ### Step 6: In-Place Source Update & Snapshot Backup
 
-1.  If the user approves the in-place update:
-    -   **Automatic Pre-Deployment Snapshot:** Create a timestamped backup copy (`SKILL.md.bak_YYYYMMDD_HHMM`) in the target directory before modifying the original file.
-    -   Write the contents of `best_skill.md` directly to the original absolute file path.
-    -   Verify that YAML frontmatter and formatting integrity are strictly preserved.
-2.  Announce completion with a direct link to the updated source file.
+1.  When approved for in-place deployment:
+    -   Create a timestamped backup snapshot (`SKILL.md.bak_YYYYMMDD_HHMM`) alongside the target file.
+    -   Write `best_skill.md` to the target path and verify valid YAML frontmatter and Markdown formatting.
+2.  **One-Step Rollback Recovery:** If post-deployment regressions occur, restore via `cp <target_dir>/SKILL.md.bak_YYYYMMDD_HHMM <target_path>` and confirm restoration in chat.
+3.  Conclude with a clickable `file://` link to the updated skill file and the backup snapshot path.
