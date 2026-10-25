@@ -261,6 +261,34 @@ Google Developer Documentation Style Guide:
     2.  *Hypotheses*: 2-3 High-Confidence and 2-3 Medium-Confidence causes.
     3.  *Diagnostic Steps*: Targeted, non-intrusive instrumentation.
     4.  *Expected Outcome*: Concrete log outputs verifying each hypothesis.
+-   **Blender `bpy` Mesh, Texture & Toon-Outline Guardrails**:
+    -   **New `bmesh` Faces**: Always call `f.normal_update()` immediately after
+        `bm.faces.new(...)` before reading `f.normal`; otherwise
+        zero-initialized normals hide inverted winding and turn backface-culled
+        `Solidify` outlines solid black.
+    -   **In-Memory Image Persistence**: After mutating `img.pixels[:]`, call
+        `img.update()` and `img.pack()` — never `img.reload()`, which discards
+        the packed pixel buffer in Blender 5.x.
+    -   **EEVEE Dithered Outline Masking**: Gate `POINT` attributes like
+        `outline_keep` with a `Math (GREATER_THAN 0.95)` node before `Mix
+        Shader` so interpolated `(0, 1)` triangle boundaries do not render as
+        dithered black stipple.
+    -   **Garment UV & Boundary Topology**:
+        -   Use a 1-to-1 full-height UV island (`~1000 px/m`) instead of
+            modulo-wrapped tiles whenever a garment has non-repeating vertical
+            features (center plackets, button rows, collar drop shadows, or
+            bottom hem splits).
+        -   Sandwich coarse base-mesh material transitions (e.g., diagonal
+            skin-to-shirt triangles along a V-neck) underneath a clean overlay
+            quad strip (`~14 mm` wide) so sawtooth triangle edges cannot show
+            from any camera angle.
+        -   For open-neck point/spread collars, partition the collar strip along
+            its arc `r`: use the lower segment (`r = 0..10`) as a flush V-neck
+            placket band from the V-apex up to the collar gorge (`outline_keep =
+            0.0` on its outer flush edge), and flare the collar leaf (`r =
+            10..34`) downward and outward from the gorge to the collar point
+            with planar tangent-frame UV projection so woven check/plaid
+            patterns stay square and un-sheared.
 
 ## 5. Document Editing & Code Standards
 
