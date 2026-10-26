@@ -249,6 +249,16 @@ Every image object in `"images"` must provide **one** of four visual sources
         )
         plotter.add_mesh(edges, color="#1F2937", line_width=1.2, lighting=False)
         ```
+        Never set `opacity < 1.0` (e.g., `0.85` or `0.95`) on active or
+        foreground parts: any value `< 1.0` routes the mesh into VTK's
+        translucent pass with depth writes disabled (`glDepthMask(GL_FALSE)`),
+        causing internal pins, connectors, and backfaces to bleed through the
+        front surface like an X-ray. When showing internal boards inside a deep
+        or perforated enclosure (such as a shell with speaker-grille holes),
+        clip the upper enclosure wall (`shell.clip(normal=(0, 0, 1), origin=(0,
+        0, z_cut), invert=True)`) and render the base tray at `opacity=1.0` (or
+        enable `plotter.enable_depth_peeling()`) so translucent grille holes do
+        not float over the target board.
 2.  **`"tool_lineup"` (Declarative Step-2 Hand-Tool Staging Card)**: Draws a
     neutral, full-width hand-tool silhouette lineup with labels sized to fit
     each slot. Staging steps use black bullets; add at most one neutral `black`
