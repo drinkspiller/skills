@@ -220,6 +220,35 @@ Every image object in `"images"` must provide **one** of four visual sources
         empty holes, and hex key sizes) and (b) an **Assembled In-Context
         (ghosted) 3D render** (surrounding housing/deck rendered
         semi-transparent so internal belt/gear engagement is visible).
+    *   **Anti-Gouraud CAD Shading & Crease-Split Normals**: When rendering CAD
+        or STL meshes in PyVista/VTK, never use `smooth_shading=True` or call
+        `compute_normals()` without `split_vertices=True` (in PyVista,
+        `split_vertices` defaults to `False`, so `feature_angle` is ignored and
+        90° screw-hole rim normals are averaged with flat face normals,
+        producing radial Gouraud starburst streaks across flat plates and PCBs).
+        Always use:
+
+        ```python
+        export_stl(part, stl_path, tolerance=0.015, angular_tolerance=0.08)
+        welded = pv.read(stl_path).clean(tolerance=1e-4, absolute=True)
+        mesh = welded.compute_normals(
+            cell_normals=True,
+            point_normals=True,
+            split_vertices=True,
+            feature_angle=25.0,
+            auto_orient_normals=False,
+            consistent_normals=False,
+        )
+        plotter.add_mesh(mesh, color=color, smooth_shading=False, show_edges=False)
+        edges = mesh.extract_feature_edges(
+            boundary_edges=True,
+            non_manifold_edges=False,
+            feature_edges=True,
+            manifold_edges=False,
+            feature_angle=25.0,
+        )
+        plotter.add_mesh(edges, color="#1F2937", line_width=1.2, lighting=False)
+        ```
 2.  **`"tool_lineup"` (Declarative Step-2 Hand-Tool Staging Card)**: Draws a
     neutral, full-width hand-tool silhouette lineup with labels sized to fit
     each slot. Staging steps use black bullets; add at most one neutral `black`

@@ -160,6 +160,17 @@ RG="python3 $SKILL_DIR/scripts/render_guide.py"
     *   For tightly clustered fasteners in perspective or exploded stacks, use a
         single `arrow` or `rect` marker instead of overlapping `circle` rings
         (`G-MARKER-OVERLAP`), and keep boxes/arrows clear of text labels.
+    *   **No Gouraud / Averaged-Normal Shading on CAD Renders**: Never render
+        STL/CAD triangulations with `smooth_shading=True` or unsplit vertex
+        normals (`compute_normals()` defaults to `split_vertices=False` in
+        PyVista/VTK, averaging 90° hole-rim normals with flat face normals and
+        creating radial Gouraud sunburst streaks across flat surfaces). Always
+        tessellate finely (`tolerance <= 0.015`, `angular_tolerance <= 0.08`),
+        weld (`clean(tolerance=1e-4, absolute=True)`), split creases
+        (`compute_normals(cell_normals=True, point_normals=True,
+        split_vertices=True, feature_angle=25.0, auto_orient_normals=False,
+        consistent_normals=False)`), render with `smooth_shading=False` and
+        `show_edges=False`, and overlay true `extract_feature_edges(feature_angle=25.0)`.
 2.  **Lint until clean**: `$RG recolor guide.json` (contrast-first colors), then
     `$RG lint guide.json --strict`.
 3.  **Build both deliverables with the rendered audit**:
