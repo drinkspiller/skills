@@ -138,16 +138,18 @@ class LintFinding:
 def _infer_fastener_count(bullet: dict[str, Any]) -> int | None:
   """Extracts explicit fastener count if specified on a bullet."""
   explicit = bullet.get("fastener_count")
-  if isinstance(explicit, int) and explicit > 0:
-    return explicit
-  text = str(bullet.get("text", "")).lower()
+  if isinstance(explicit, int):
+    return explicit if explicit > 0 else None
+  text = re.sub(r"[*`]", "", str(bullet.get("text", "")).lower())
   match_nx = re.search(r"\b(\d+)\s*x\s*m\d", text)
   if match_nx:
     return int(match_nx.group(1))
   match_word = re.search(
-      r"\b(one|two|three|four|five|six|seven|eight|\d+)\s+"
-      r"(?:m\d[\w.-]*|tx\s*\d+|torx|phillips|allen|hex)\s+"
-      r"(?:torx\s+)?(?:screws?|bolts?|nuts?)",
+      r"(?<!on the )(?<!onto the )(?<!into the )(?<!from the )(?<![.\w])"
+      r"(one|two|three|four|five|six|seven|eight|\d+)\s+"
+      r"(?:discrete\s+)?(?:m\d[\w.-]*|tx\s*\d+|torx|phillips|allen|hex)\s+"
+      r"(?:[\w.-]+\s+){0,3}?"
+      r"(?:screws?|bolts?|nuts?|spacers?|standoffs?|inserts?)",
       text,
   )
   if match_word:
@@ -260,6 +262,12 @@ def lint_guide(
 
     marker_colors: set[str] = set()
     circle_counts: dict[str, int] = {}
+    markers_by_color: dict[str, list[dict[str, Any]]] = {}
+    has_exploded_visual = any(
+        "exploded" in str(img.get("src", "")).lower()
+        or "exploded" in str(img.get("caption", "")).lower()
+        for img in images
+    )
     is_staging = bool(images) and all(img.get("tool_lineup") for img in images)
     for img_i, img in enumerate(images, start=1):
       has_source = any(
@@ -357,6 +365,7 @@ def lint_guide(
           continue
         if m.get("shape") != "loupe" and mcolor in SPATIAL_COLORS:
           marker_colors.add(mcolor)
+          markers_by_color.setdefault(mcolor, []).append(m)
         if m.get("shape") == "circle":
           circle_counts[mcolor] = circle_counts.get(mcolor, 0) + 1
       circles_on_img = [
@@ -473,6 +482,62 @@ def lint_guide(
                     f" but visuals mark {ccount} '{bcolor}' circle(s).",
                 )
             )
+          elif (
+              fcount is not None
+              and fcount >= 2
+              and ccount == 0
+              and not has_exploded_visual
+              and markers_by_color.get(bcolor)
+          ):
+            findings.append(
+                LintFinding(
+                    "G-FASTENER-COUNT-SYNC",
+                    "WARN",
+                    f"{prefix}: '{bcolor}' bullet states {fcount} discrete"
+                    " fasteners/spacers/inserts but marks 0 circles. Mark each"
+                    f" location with a '{bcolor}' circle (or split into"
+                    " separate bullets).",
+                )
+            )
+          if re.search(
+              r",\s*then\s+(?:press|drive|fasten|seat|lower|insert|mount|connect|route|thread|tighten)\b"
+              r"|\band\s+then\s+(?:press|drive|fasten|seat|lower|insert|mount|connect|route|thread|tighten)\b",
+              lower_text,
+          ):
+            findings.append(
+                LintFinding(
+                    "G-COMPOUND-ACTION",
+                    "WARN",
+                    f"{prefix} bullet {b_i + 1}: Chains multiple distinct"
+                    f" physical actions into one '{bcolor}' bullet. Split into"
+                    " separate colored bullets so each action maps 1-to-1 to"
+                    " its own visual marker.",
+                )
+            )
+          for m_rect in markers_by_color.get(bcolor, []):
+            if m_rect.get("shape") == "rect":
+              rw_pct = float(m_rect.get("w", 0.0))
+              rh_pct = float(m_rect.get("h", 0.0))
+              ang_deg = abs(float(m_rect.get("angle", 0.0)))
+              if (
+                  ang_deg < 0.05
+                  and rw_pct * rh_pct > 1600.0
+                  and re.search(
+                      r"\b(?:header|connector|pins?|jumper|socket)\b",
+                      lower_text,
+                  )
+              ):
+                findings.append(
+                    LintFinding(
+                        "G-OVERSIZED-RECT",
+                        "WARN",
+                        f"{prefix} bullet {b_i + 1}: Unrotated '{bcolor}' rect"
+                        f" covers {rw_pct:.0f}x{rh_pct:.0f}% of the frame for a"
+                        " linear connector/header. Tighten 'w'/'h' to the"
+                        " connector bounds or set 'angle' (degrees) for"
+                        " isometric views.",
+                    )
+                )
         for phrase in BANNED_ACTION_PHRASES:
           if phrase in lower_text:
             findings.append(
@@ -2377,6 +2442,28 @@ window.addEventListener('load', () => {
     });
     const cols = new Set([...svg.querySelectorAll('.ag-marker')].map((m) => m.dataset.color).filter((c) => c && c !== 'black'));
     if (cols.size > 3) push('A-MARKER-COLORS', where, `${cols.size} marker colors on one visual`);
+    svg.querySelectorAll('image').forEach((imgEl) => {
+      try {
+        const cv = document.createElement('canvas');
+        cv.width = 64; cv.height = 48;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(imgEl, 0, 0, 64, 48);
+        const data = ctx.getImageData(12, 9, 40, 30).data;
+        let lumSum = 0, fgCount = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+          if (a > 128 && (r < 242 || g < 242 || b < 242)) {
+            lumSum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            fgCount++;
+          }
+        }
+        const hasLift = (imgEl.getAttribute('filter') || '').includes('ag-neutral-photo');
+        const meanLum = fgCount > 0 ? (lumSum / fgCount) * (hasLift ? 1.06 : 1.0) + (hasLift ? 7.65 : 0.0) : 255;
+        if (fgCount > 80 && meanLum < 65) {
+          push('A-LOW-CONTRAST', where, `raster visual is too dark (mean luminance ${Math.round(meanLum)}/255 < 65); use lighter slate/steel part fills so #1F2937 feature edges stay crisp`);
+        }
+      } catch (e) {}
+    });
   });
   document.querySelectorAll('body *').forEach((el) => {
     const cs = getComputedStyle(el);

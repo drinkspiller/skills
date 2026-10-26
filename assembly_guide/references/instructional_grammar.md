@@ -134,9 +134,9 @@ schematics, tool lineups, screens) and draws markers on top at full saturation.
 
 ### Marker Shapes, Camera Framing, and Non-Overlap Rules
 
-*   **`circle`**: Screws, bolts, grub screws, alignment pins, round buttons.
-    When a bullet names `N` fasteners on an unobstructed top/bottom view, draw
-    `N` rings of its color (`G-FASTENER-COUNT-SYNC`).
+*   **`circle`**: Screws, bolts, grub screws, hex spacers, standoffs, brass inserts, alignment pins, round buttons.
+    When a bullet names `N >= 2` discrete fasteners, spacers, standoffs, or inserts, draw
+    `N` rings of its color (`G-FASTENER-COUNT-SYNC`) and never chain two distinct physical actions into one colored bullet (`G-COMPOUND-ACTION`).
     *   **No overlapping circles (`G-MARKER-OVERLAP`)**: In perspective or
         exploded views where 3–4 screws sit close together (for example, 4
         `M3x8` screws above a `Ø14 mm` servo horn circle), individual `circle`
@@ -145,7 +145,7 @@ schematics, tool lineups, screens) and draws markers on top at full saturation.
         circles.
 *   **`rect`**: Rectangular connectors, IC packages, on-screen rows, or a
     sub-assembly layer in an exploded view. Size the box tightly to the physical
-    part only—never let a `rect` cross over right-hand diagram text labels.
+    part only (`w * h <= 1600` for connectors, setting `"angle"` in degrees for diagonal/isometric headers under `G-OVERSIZED-RECT`)—never let a `rect` cross over right-hand diagram text labels.
 *   **`arrow`**: Linear motion, insertion axis, pointer to a narrow datum, or
     pointer to a perspective fastener cluster.
 *   **`arc`**: Clockwise (`cw`) or counterclockwise (`ccw`) rotation. Pair with
