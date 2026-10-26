@@ -1083,12 +1083,20 @@ def _render_marker_svg(m: dict[str, Any], base_svg: str, uid: str) -> str:
     ry = float(m.get("y", 20)) * 3.0
     rw = float(m.get("w", 20)) * 4.0
     rh = float(m.get("h", 20)) * 3.0
+    angle = float(m.get("angle", 0.0))
+    rot_attr = (
+        f' transform="rotate({angle:.1f} {rx + rw / 2.0:.1f}'
+        f' {ry + rh / 2.0:.1f})"'
+        if abs(angle) > 0.05
+        else ""
+    )
     return (
         f"<g {attr}>"
         f'<rect x="{rx:.1f}" y="{ry:.1f}" width="{rw:.1f}" height="{rh:.1f}"'
-        f' rx="3" fill="none" stroke="{halo}" stroke-width="5" opacity="0.9"/>'
+        f' rx="3" fill="none" stroke="{halo}" stroke-width="5"'
+        f' opacity="0.9"{rot_attr}/>'
         f'<rect x="{rx:.1f}" y="{ry:.1f}" width="{rw:.1f}" height="{rh:.1f}"'
-        f' rx="3" fill="none" stroke="{stroke}" stroke-width="2.6"/>'
+        f' rx="3" fill="none" stroke="{stroke}" stroke-width="2.6"{rot_attr}/>'
         "</g>"
     )
   if shape == "arrow":

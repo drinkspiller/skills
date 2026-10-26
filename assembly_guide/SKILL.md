@@ -159,25 +159,16 @@ RG="python3 $SKILL_DIR/scripts/render_guide.py"
         board inside a full-enclosure overview.
     *   For tightly clustered fasteners in perspective or exploded stacks, use a
         single `arrow` or `rect` marker instead of overlapping `circle` rings
-        (`G-MARKER-OVERLAP`), and keep boxes/arrows clear of text labels.
-    *   **No Gouraud / Averaged-Normal Shading or Translucent Z-Buffer Glitches**:
-        Never render STL/CAD triangulations with `smooth_shading=True` or
-        unsplit vertex normals (`compute_normals()` defaults to
-        `split_vertices=False` in PyVista/VTK, averaging 90° hole-rim normals
-        with flat face normals and creating radial Gouraud sunburst streaks
-        across flat surfaces). Always tessellate finely (`tolerance <= 0.015`,
-        `angular_tolerance <= 0.08`), weld (`clean(tolerance=1e-4,
-        absolute=True)`), split creases (`compute_normals(cell_normals=True,
-        point_normals=True, split_vertices=True, feature_angle=25.0,
-        auto_orient_normals=False, consistent_normals=False)`), render with
-        `smooth_shading=False` and `show_edges=False`, and overlay true
-        `extract_feature_edges(feature_angle=25.0)`. Keep all active/foreground
-        parts at `opacity=1.0` (setting `0.85–0.95` disables depth writes in VTK
-        and causes internal pins/backfaces to bleed through like an X-ray); when
-        showing boards inside a deep or perforated housing, clip away the
-        occluding upper wall (`mesh.clip(...)`) at `opacity=1.0` or call
-        `plotter.enable_depth_peeling()` rather than placing a translucent
-        speaker-grille wall in front of the camera.
+        (`G-MARKER-OVERLAP`), and keep boxes/arrows clear of text labels. When
+        framing an angled linear feature in an isometric view (e.g., a 40-pin
+        GPIO header or edge connector), set `"angle"` (in degrees) on `"rect"`
+        so the rectangle wraps only the connector along its diagonal axis rather
+        than boxing half the board.
+    *   Use a high-contrast light/mid-slate surface palette (`#E2E8F0` housing,
+        `#CBD5E1` / `#94A3B8` / `#B4C6DC` PCBs, `#F59E0B` brass standoffs,
+        `ambient >= 0.45`) so dark `#1F2937` feature edges stay crisp; never use
+        dark charcoal/navy PCB fills (`#1E293B`, `#3F3F46`) that swallow internal
+        trace, pad, and pin edges.
 2.  **Lint until clean**: `$RG recolor guide.json` (contrast-first colors), then
     `$RG lint guide.json --strict`.
 3.  **Build both deliverables with the rendered audit**:

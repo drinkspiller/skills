@@ -185,9 +185,14 @@ feature across responsive desktop, mobile, zoom lightbox, and print PDF views.
     place overlapping circles on tightly clustered perspective/exploded screws
     (`G-MARKER-OVERLAP`); use an `arrow` or `rect` instead.
 *   **`rect`**:
-    `{"shape": "rect", "color": "green", "x": 22, "y": 48, "w": 56, "h": 12}`
-    (`x`, `y` is top-left corner; `w`, `h` are width and height percentages).
-    Keep `rect` boxes clear of right-hand diagram text labels.
+    `{"shape": "rect", "color": "green", "x": 22, "y": 48, "w": 56, "h": 12, "angle": 0}`
+    (`x`, `y` is top-left corner; `w`, `h` are width and height percentages;
+    optional `"angle"` rotates the rectangle in degrees around its center).
+    When framing an angled connector or header strip in an isometric 3D render
+    (such as a 40-pin GPIO header), set `"angle"` (e.g., `30.5`) and tight `w`/`h`
+    so the rectangle hugs only the connector rather than covering half the board
+    with an axis-aligned box. Keep `rect` boxes clear of right-hand diagram text
+    labels.
 *   **`arrow`**: `{"shape": "arrow", "color": "cyan", "x1": 30, "y1": 70, "x2":
     48, "y2": 45}` (tail at `x1,y1` pointing to tip at `x2,y2`).
 *   **`arc`**: `{"shape": "arc", "color": "green", "x": 62, "y": 48, "r": 14,
@@ -220,45 +225,6 @@ Every image object in `"images"` must provide **one** of four visual sources
         empty holes, and hex key sizes) and (b) an **Assembled In-Context
         (ghosted) 3D render** (surrounding housing/deck rendered
         semi-transparent so internal belt/gear engagement is visible).
-    *   **Anti-Gouraud CAD Shading & Crease-Split Normals**: When rendering CAD
-        or STL meshes in PyVista/VTK, never use `smooth_shading=True` or call
-        `compute_normals()` without `split_vertices=True` (in PyVista,
-        `split_vertices` defaults to `False`, so `feature_angle` is ignored and
-        90° screw-hole rim normals are averaged with flat face normals,
-        producing radial Gouraud starburst streaks across flat plates and PCBs).
-        Always use:
-
-        ```python
-        export_stl(part, stl_path, tolerance=0.015, angular_tolerance=0.08)
-        welded = pv.read(stl_path).clean(tolerance=1e-4, absolute=True)
-        mesh = welded.compute_normals(
-            cell_normals=True,
-            point_normals=True,
-            split_vertices=True,
-            feature_angle=25.0,
-            auto_orient_normals=False,
-            consistent_normals=False,
-        )
-        plotter.add_mesh(mesh, color=color, smooth_shading=False, show_edges=False)
-        edges = mesh.extract_feature_edges(
-            boundary_edges=True,
-            non_manifold_edges=False,
-            feature_edges=True,
-            manifold_edges=False,
-            feature_angle=25.0,
-        )
-        plotter.add_mesh(edges, color="#1F2937", line_width=1.2, lighting=False)
-        ```
-        Never set `opacity < 1.0` (e.g., `0.85` or `0.95`) on active or
-        foreground parts: any value `< 1.0` routes the mesh into VTK's
-        translucent pass with depth writes disabled (`glDepthMask(GL_FALSE)`),
-        causing internal pins, connectors, and backfaces to bleed through the
-        front surface like an X-ray. When showing internal boards inside a deep
-        or perforated enclosure (such as a shell with speaker-grille holes),
-        clip the upper enclosure wall (`shell.clip(normal=(0, 0, 1), origin=(0,
-        0, z_cut), invert=True)`) and render the base tray at `opacity=1.0` (or
-        enable `plotter.enable_depth_peeling()`) so translucent grille holes do
-        not float over the target board.
 2.  **`"tool_lineup"` (Declarative Step-2 Hand-Tool Staging Card)**: Draws a
     neutral, full-width hand-tool silhouette lineup with labels sized to fit
     each slot. Staging steps use black bullets; add at most one neutral `black`
