@@ -25,7 +25,7 @@ bench.
 
 | Resource | Purpose |
 | :--- | :--- |
-| [references/instructional_grammar.md](references/instructional_grammar.md) | Layouts (`manual` vs. `workbench`), contrast-first colors, neutral visuals, marker shapes, camera zoom & projection, callout icons, pacing, and builder register |
+| [references/instructional_grammar.md](references/instructional_grammar.md) | Unified step layout, procedure types, contrast-first colors, neutral visuals, marker shapes, camera zoom & projection, callout icons, pacing, and builder register |
 | [references/schema_and_visual_authoring.md](references/schema_and_visual_authoring.md) | `guide.json` schema, `0-100` camera-projected marker coordinates, visual sources, and Markdown rules |
 | `scripts/render_guide.py` | Zero-dependency CLI: `lint`, `build` (HTML, PDF, Markdown), `audit`, `recolor`, `init-sample` |
 
@@ -38,18 +38,19 @@ before drafting the first guide in a session. Every guide obeys five laws:
 
 1.  **Dual redundancy**: A builder can complete each step from the 1-3 visuals
     alone *or* from the bullets alone.
-2.  **Color-matched 1-to-1 spatial binding (`G-COMPOUND-ACTION`, `G-FASTENER-COUNT-SYNC`, `G-COLOR-SYNC`)**:
-    Each spatial bullet gets a color in contrast-first order (`red` → `blue` →
-    `green` → `orange` → `magenta` → `cyan` → `yellow`; `black` for non-spatial
-    bullets) and maps **1-to-1** to a matching marker (`circle`, `rect`,
-    `arrow`, `arc`, or `loupe`). Never chain two physical actions on different
-    parts into one colored bullet (`G-COMPOUND-ACTION`, e.g., placing 4x hex
-    spacers *and* pressing a HAT onto a GPIO header, or sliding a servo to
-    tension a belt *and* checking 4 mounting holes)—split them into separate
-    colored bullets. Every bullet naming `N >= 2` discrete screws, spacers,
-    standoffs, or inserts must set `"fastener_count": N` and bind to `N`
-    matching `circle` markers (`G-FASTENER-COUNT-SYNC`). Leave zero unreferenced
-    orphan markers (`G-COLOR-SYNC`). At most 3 marker colors per visual.
+2.  **Color-matched 1-to-1 spatial binding (`G-COMPOUND-ACTION`,
+    `G-FASTENER-COUNT-SYNC`, `G-COLOR-SYNC`)**: Each spatial bullet gets a color
+    in contrast-first order (`red` → `blue` → `green` → `orange` → `magenta` →
+    `cyan` → `yellow`; `black` for non-spatial bullets) and maps **1-to-1** to a
+    matching marker (`circle`, `rect`, `arrow`, `arc`, or `loupe`). Never chain
+    two physical actions on different parts into one colored bullet
+    (`G-COMPOUND-ACTION`, e.g., placing 4x hex spacers *and* pressing a HAT onto
+    a GPIO header, or sliding a servo to tension a belt *and* checking 4
+    mounting holes)—split them into separate colored bullets. Every bullet
+    naming `N >= 2` discrete screws, spacers, standoffs, or inserts must set
+    `"fastener_count": N` and bind to `N` matching `circle` markers
+    (`G-FASTENER-COUNT-SYNC`). Leave zero unreferenced orphan markers
+    (`G-COLOR-SYNC`). At most 3 marker colors per visual.
 3.  **One step, one physical objective**: 1-3 visuals and ≤ 7 bullets for one
     coherent transition. Never mix unrelated subsystems.
 4.  **Hazards before actions (`G-WARN-ORDER`)**: Every hazard or pin-alignment
@@ -95,22 +96,6 @@ Choose the procedure type (`archetype`):
     seal or datum checks, or calibration.
 *   **`teardown`**: Symmetric disassembly that closes with a reverse-order
     reassembly note. Only valid when reassembly is a true mirror.
-
-Choose the default layout (`default_dialect`):
-
-*   **`manual` (Manual layout)**: Displays all step visuals simultaneously in a
-    side-by-side grid (`1-up` beside bullets; `2-up` or `3-up` above bullets),
-    uses solid colored **hexagon** bullet glyphs, an orange accent bar, and
-    shows the **Table of Contents** card at the top—ideal for reading paired
-    *Exploded* + *Assembled* sub-assembly views side by side or printing.
-*   **`workbench` (Workbench layout)**: Displays a single large `4:3` active
-    stage (`55%` width) beside the bullets with clickable **thumbnail switcher
-    buttons** underneath (hovering or clicking a colored bullet automatically
-    switches the stage to the frame carrying that marker color), uses hollow
-    colored **ring** bullet glyphs, a blue accent bar, and hides the Table of
-    Contents so Step 1 starts higher on screen.
-
-The interactive HTML guide includes a live header toggle between both layouts.
 
 ## 3. Standard Guide Arc
 
@@ -170,18 +155,19 @@ RG="python3 $SKILL_DIR/scripts/render_guide.py"
         (`G-MARKER-OVERLAP`), and keep boxes/arrows clear of text labels. When
         framing an angled linear feature in an isometric view (e.g., a 40-pin
         GPIO header or 22-pin edge connector), set `"angle"` (in degrees) on
-        `"shape": "rect"` with tight `"w"`/`"h"` bounds (`w * h <= 1600`) so
-        the rotated rectangle wraps only the connector (`G-OVERSIZED-RECT`).
+        `"shape": "rect"` with tight `"w"`/`"h"` bounds (`w * h <= 1600`) so the
+        rotated rectangle wraps only the connector (`G-OVERSIZED-RECT`).
     *   Use a high-contrast light/mid-slate surface palette (`#E2E8F0` housing,
         `#CBD5E1` / `#94A3B8` / `#B4C6DC` PCBs, muted brass `#D4B475` for
         base-visual standoffs so bright marker overlays stay dominant,
         `ambient >= 0.45`) so foreground mean luminance stays `>= 65/255`
         (`A-LOW-CONTRAST`) and dark `#1F2937` feature edges stay crisp; never
         use dark charcoal/navy PCB fills (`#1E293B`, `#3F3F46`).
-    *   Prevent Gouraud/smooth-shading dark diagonal triangles on flat faces with
-        counterbored holes by splitting mesh vertices at sharp creases via
-        `mesh.compute_normals(cell_normals=False, point_normals=True, split_vertices=True, feature_angle=30.0)`
-        before rendering at a `4:3` camera projection with `#1F2937` feature edges.
+    *   Prevent Gouraud/smooth-shading dark diagonal triangles on flat faces
+        with counterbored holes by splitting mesh vertices at sharp creases via
+        `mesh.compute_normals(cell_normals=False, point_normals=True,
+        split_vertices=True, feature_angle=30.0)` before rendering at a `4:3`
+        camera projection with `#1F2937` feature edges.
 2.  **Lint until clean**: `$RG recolor guide.json` (contrast-first colors), then
     `$RG lint guide.json --strict`.
 3.  **Build both deliverables with the rendered audit**:

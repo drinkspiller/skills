@@ -16,7 +16,6 @@ rendered-geometry and pagination checks.
   "guide_id": "fan-replacement-v1",
   "canonical_url": "https://example.com/guides/fan-replacement",
   "archetype": "roundtrip",
-  "default_dialect": "manual",
   "difficulty": "Moderate",
   "time_required": "25–40 minutes",
   "variants": [
@@ -60,10 +59,6 @@ rendered-geometry and pagination checks.
     *   `"teardown"`: Symmetric disassembly that appends the reverse-order
         reassembly note. The linter rejects it when torque specs or single-use
         consumables appear.
-*   **`default_dialect`**: `"manual"` (thin accent rule, condensed `STEP N`,
-    hexagon bullets, adaptive 1/2/3-up grids) or `"workbench"` (4:3 stage with
-    thumbnails, ring bullets). The HTML guide includes a live layout toggle;
-    `build --pdf-dialect` picks the layout for the PDF.
 *   **`difficulty`**: `"Very Easy"` | `"Easy"` | `"Moderate"` | `"Difficult"` |
     `"Very Difficult"`.
 *   **`display_names`** *(optional)*: Maps CAD or model identifiers to the names
@@ -184,15 +179,14 @@ feature across responsive desktop, mobile, zoom lightbox, and print PDF views.
     percentage of image width; `2.5`–`4.5` frames single screws cleanly). Never
     place overlapping circles on tightly clustered perspective/exploded screws
     (`G-MARKER-OVERLAP`); use an `arrow` or `rect` instead.
-*   **`rect`**:
-    `{"shape": "rect", "color": "green", "x": 22, "y": 48, "w": 56, "h": 12, "angle": 0}`
-    (`x`, `y` is top-left corner; `w`, `h` are width and height percentages;
-    optional `"angle"` rotates the rectangle in degrees around its center).
-    When framing an angled connector or header strip in an isometric 3D render
-    (such as a 40-pin GPIO header), set `"angle"` (e.g., `30.5`) and tight `w`/`h`
-    so the rectangle hugs only the connector rather than covering half the board
-    with an axis-aligned box. Keep `rect` boxes clear of right-hand diagram text
-    labels.
+*   **`rect`**: `{"shape": "rect", "color": "green", "x": 22, "y": 48, "w": 56,
+    "h": 12, "angle": 0}` (`x`, `y` is top-left corner; `w`, `h` are width and
+    height percentages; optional `"angle"` rotates the rectangle in degrees
+    around its center). When framing an angled connector or header strip in an
+    isometric 3D render (such as a 40-pin GPIO header), set `"angle"` (e.g.,
+    `30.5`) and tight `w`/`h` so the rectangle hugs only the connector rather
+    than covering half the board with an axis-aligned box. Keep `rect` boxes
+    clear of right-hand diagram text labels.
 *   **`arrow`**: `{"shape": "arrow", "color": "cyan", "x1": 30, "y1": 70, "x2":
     48, "y2": 45}` (tail at `x1,y1` pointing to tip at `x2,y2`).
 *   **`arc`**: `{"shape": "arc", "color": "green", "x": 62, "y": 48, "r": 14,

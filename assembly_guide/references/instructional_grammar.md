@@ -25,19 +25,19 @@ prevent one of them:
     torque (*"1.5 Nm / 13.3 lb-in"*), or an expected feel (*"moderate force
     against the magnetic inserts"*).
 
-## 2. Layouts and Procedure Types
+## 2. Unified Step Layout and Procedure Types
 
 <!-- mdformat off(prevent table wrapping) -->
 
-| Dimension | Manual layout (`manual`) | Workbench layout (`workbench`) | Rule |
-| :--- | :--- | :--- | :--- |
-| **Best for** | Kit builds, maintenance round-trips, upgrades, calibration | Device teardown, fault isolation, drop-in replacement | Use `roundtrip` whenever reassembly is asymmetric; use `teardown` only for symmetric swaps |
-| **Front matter** | Title, product summary, variant note, logistics row, **Table of Contents card**, tools and parts tables, 1:1 fastener card | Same content, with the **Table of Contents hidden** so Step 1 starts higher on screen | Always include logistics and a tools step when tools could be confused |
-| **Step header** | `2px` orange accent rule (`#FA6831`), condensed uppercase `STEP N`, 2-6 word title | `1px` gray rule, blue `Step N` badge (`#0071CE`) with a concise objective title | Keep titles short and parallel |
-| **Visuals** | Screen: **all visuals shown simultaneously** (`1-up` beside bullets, `2-up` or `3-up` in a row above bullets; thumbnails hidden). Print: single visuals full width | **Single `4:3` active stage (`55%` width)** beside bullets with clickable **thumbnail switcher buttons** below; hovering/clicking a colored bullet switches to the frame carrying that marker | Cap each step at **1-3 visuals**: 1-up for one action, 2-up for `locate → act`, 3-up for `context → action → result` |
-| **Bullet glyph** | **Solid hexagon** in the marker color, black for non-spatial bullets | **Hollow ring** in the marker color, black for non-spatial bullets | Every colored bullet matches a marker of the same color in that step |
-| **Reassembly** | Explicit parts preparation step, then full assembly, torque, firmware, and calibration | Reverse-order note plus per-step `📌` reminders | Never use the reverse-order note when reassembly adds torque limits, datums, single-use consumables, or calibration |
-| **Closure** | Milestone notes, tool stowage, functional self-test, lined notes pages in print | Reassembly note and post-repair test | End every guide with an observable functional check and tool stowage |
+| Dimension | Unified Guide Layout | Rule |
+| :--- | :--- | :--- |
+| **Procedure types (`archetype`)** | `assembly` (first-time kit build), `roundtrip` (disassembly → parts prep → explicit assembly → check), or `teardown` (symmetric swap) | Use `roundtrip` whenever reassembly is asymmetric; use `teardown` only for symmetric swaps |
+| **Front matter** | Title, product summary, variant note, logistics row, **Table of Contents card**, tools and parts tables, and optional 1:1 fastener card | Always include logistics and a tools step when tools could be confused |
+| **Step header** | `2px` orange accent rule (`#FA6831`), condensed uppercase `STEP N`, and a 2-6 word objective title | Keep titles short and parallel |
+| **Visuals** | Screen: **all visuals shown simultaneously** (`1-up` beside bullets, `2-up` or `3-up` in a row above bullets). Print: single visuals centered up to `140 mm` width above bullets | Cap each step at **1-3 visuals**: 1-up for one action, 2-up for `locate → act`, 3-up for `context → action → result` |
+| **Bullet glyph** | **Solid hexagon** in the marker color, black for non-spatial bullets | Every colored bullet matches a marker of the same color in that step |
+| **Reassembly** | Explicit parts preparation step, then full assembly, torque, firmware, and calibration (`teardown` appends a reverse-order banner plus per-step `📌` reminders) | Never use the reverse-order note when reassembly adds torque limits, datums, single-use consumables, or calibration |
+| **Closure** | Milestone notes, tool stowage, functional self-test, and lined notes pages in print | End every guide with an observable functional check and tool stowage |
 
 <!-- mdformat on -->
 
@@ -91,8 +91,8 @@ example, the TX 8 key between TX 6 and TX 10).
     onto multi-object `.step` build plates, show 3D thumbnails of the parts on
     each plate, note how to split multi-object plates in the slicer
     (*"Right-click → Split → To objects"* for smaller beds like a `180 × 180 mm`
-    Prusa Mini), and when a revision modifies only one part, explicitly state
-    which plate changed vs. which plates do not need re-printing.
+    compact printer), and when a revision modifies only one part, explicitly
+    state which plate changed vs. which plates do not need re-printing.
 
 ### Multi-Part Sub-Assemblies: Paired Exploded Stack + Ghosted In-Context Renders
 
@@ -134,9 +134,11 @@ schematics, tool lineups, screens) and draws markers on top at full saturation.
 
 ### Marker Shapes, Camera Framing, and Non-Overlap Rules
 
-*   **`circle`**: Screws, bolts, grub screws, hex spacers, standoffs, brass inserts, alignment pins, round buttons.
-    When a bullet names `N >= 2` discrete fasteners, spacers, standoffs, or inserts, draw
-    `N` rings of its color (`G-FASTENER-COUNT-SYNC`) and never chain two distinct physical actions into one colored bullet (`G-COMPOUND-ACTION`).
+*   **`circle`**: Screws, bolts, grub screws, hex spacers, standoffs, brass
+    inserts, alignment pins, round buttons. When a bullet names `N >= 2`
+    discrete fasteners, spacers, standoffs, or inserts, draw `N` rings of its
+    color (`G-FASTENER-COUNT-SYNC`) and never chain two distinct physical
+    actions into one colored bullet (`G-COMPOUND-ACTION`).
     *   **No overlapping circles (`G-MARKER-OVERLAP`)**: In perspective or
         exploded views where 3–4 screws sit close together (for example, 4
         `M3x8` screws above a `Ø14 mm` servo horn circle), individual `circle`
@@ -145,7 +147,9 @@ schematics, tool lineups, screens) and draws markers on top at full saturation.
         circles.
 *   **`rect`**: Rectangular connectors, IC packages, on-screen rows, or a
     sub-assembly layer in an exploded view. Size the box tightly to the physical
-    part only (`w * h <= 1600` for connectors, setting `"angle"` in degrees for diagonal/isometric headers under `G-OVERSIZED-RECT`)—never let a `rect` cross over right-hand diagram text labels.
+    part only (`w * h <= 1600` for connectors, setting `"angle"` in degrees for
+    diagonal/isometric headers under `G-OVERSIZED-RECT`)—never let a `rect`
+    cross over right-hand diagram text labels.
 *   **`arrow`**: Linear motion, insertion axis, pointer to a narrow datum, or
     pointer to a perspective fastener cluster.
 *   **`arc`**: Clockwise (`cw`) or counterclockwise (`ccw`) rotation. Pair with

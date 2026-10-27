@@ -19,7 +19,6 @@ import tempfile
 from typing import Any
 
 VALID_ARCHETYPES = frozenset({"assembly", "roundtrip", "teardown"})
-VALID_DIALECTS = frozenset({"manual", "workbench"})
 VALID_TOOL_LINEUP_KINDS = frozenset({
     "torx_key",
     "hex_key",
@@ -180,14 +179,13 @@ def lint_guide(
         )
     )
 
-  dialect = guide.get("default_dialect", "manual")
-  if dialect not in VALID_DIALECTS:
+  if "default_dialect" in guide and guide["default_dialect"] != "manual":
     findings.append(
         LintFinding(
             "G-SCHEMA",
             "ERROR",
-            f"Invalid default_dialect '{dialect}'. Expected 'manual' or"
-            " 'workbench'.",
+            f"Unsupported default_dialect '{guide['default_dialect']}'. Omit"
+            " 'default_dialect' or set it to 'manual'.",
         )
     )
 
@@ -1350,11 +1348,7 @@ def _bullet_icon_svg(btype: str, color_key: str) -> str:
       '<span class="ag-icon ag-icon-bullet" aria-hidden="true">'
       '<svg class="ag-glyph-hex" viewBox="0 0 20 20" width="15" height="15">'
       '<polygon points="10,1.5 17.5,5.8 17.5,14.2 10,18.5 2.5,14.2 2.5,5.8"'
-      f' fill="{hex_col}"/></svg>'
-      '<svg class="ag-glyph-ring" viewBox="0 0 20 20" width="15" height="15">'
-      f'<circle cx="10" cy="10" r="7.5" fill="none" stroke="{hex_col}"'
-      ' stroke-width="2.2"/>'
-      f'<circle cx="10" cy="10" r="3.8" fill="{hex_col}"/></svg></span>'
+      f' fill="{hex_col}"/></svg></span>'
   )
 
 
@@ -1411,7 +1405,6 @@ def render_html(
     guide: dict[str, Any],
     base_dir: pathlib.Path,
     embed_images: bool = False,
-    dialect_override: str | None = None,
     paper: str = "A4",
     pdf_href: str | None = None,
 ) -> str:
@@ -1425,9 +1418,6 @@ def render_html(
   guide_id = html.escape(str(guide.get("guide_id", "")))
   canonical_url = html.escape(str(guide.get("canonical_url", "")))
   archetype = str(guide.get("archetype", "roundtrip"))
-  default_dialect = dialect_override or str(
-      guide.get("default_dialect", "manual")
-  )
   difficulty = str(guide.get("difficulty", "Moderate"))
   time_req = html.escape(str(guide.get("time_required", "30 minutes")))
   steps = guide.get("steps", [])
@@ -1545,7 +1535,7 @@ def render_html(
       rendered_imgs.append((svg_markup, cap, cols))
 
     frames_html = "".join(
-        f'<figure class="ag-frame{" is-active" if i == 0 else ""}"'
+        '<figure class="ag-frame"'
         f' data-frame-idx="{i}"'
         f' data-colors="{" ".join(sorted(cols))}"'
         f' tabindex="0" role="button" aria-label="Zoom {cap}">'
@@ -1554,17 +1544,6 @@ def render_html(
         "</figure>"
         for i, (svg_markup, cap, cols) in enumerate(rendered_imgs)
     )
-
-    thumbs_html = ""
-    if img_count > 1:
-      thumbs_inner = "".join(
-          '<button type="button"'
-          f' class="ag-thumb{" is-active" if i == 0 else ""}"'
-          f' data-target-idx="{i}" aria-label="Show frame {i + 1}:'
-          f' {cap}">{svg_markup}</button>'
-          for i, (svg_markup, cap, _) in enumerate(rendered_imgs)
-      )
-      thumbs_html = f'<div class="ag-thumbs">{thumbs_inner}</div>'
 
     bullets_html_items: list[str] = []
     for b in step.get("bullets", []):
@@ -1610,7 +1589,7 @@ def render_html(
         "<span>Done</span></label>"
         "</header>"
         '<div class="ag-step-body">'
-        f'<div class="ag-media">{frames_html}{thumbs_html}</div>'
+        f'<div class="ag-media">{frames_html}</div>'
         '<div class="ag-instructions">'
         f'<ul class="ag-bullets">{"".join(bullets_html_items)}</ul>'
         f"{milestone_html}"
@@ -1667,7 +1646,6 @@ def render_html(
   --text: #18181b;
   --text-muted: #52525b;
   --accent: #fa6831;
-  --accent-alt: #0071ce;
   --heading-accent: var(--accent);
   --warn-red: #c62828;
   --radius-outer: 12px;
@@ -1718,34 +1696,7 @@ body {{
   letter-spacing: 0.06em;
   font-size: 0.76rem;
 }}
-body[data-dialect="workbench"] .ag-cat-tag {{ color: var(--accent-alt); }}
 .ag-controls {{ display: flex; align-items: center; gap: 10px; }}
-.ag-seg-track {{
-  display: inline-flex;
-  background: #f4f4f5;
-  padding: 3px;
-  border-radius: 9px;
-  border: 1px solid var(--border);
-}}
-.ag-seg-btn {{
-  border: 0;
-  background: transparent;
-  padding: 5px 12px;
-  border-radius: var(--radius-inner);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 140ms ease,
-              color 140ms ease;
-}}
-.ag-seg-btn:active {{ transition-duration: 0ms; transform: translateY(1px); }}
-.ag-seg-btn.is-active {{
-  background: #fff;
-  color: var(--text);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}}
 .ag-btn {{
   border: 1px solid var(--border-strong);
   background: #fff;
@@ -1779,18 +1730,13 @@ a.ag-btn {{ text-decoration: none; display: inline-flex; align-items: center; }}
   padding: 28px 24px 72px;
 }}
 .ag-hero {{ margin-bottom: 26px; }}
-body[data-dialect="workbench"] {{ --heading-accent: var(--accent-alt); }}
 .ag-hero h1 {{
   margin: 4px 0 8px;
   color: var(--heading-accent);
-  font-size: clamp(1.75rem, 3vw, 2.35rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}}
-body[data-dialect="manual"] .ag-hero h1 {{
   font-family: var(--font-condensed);
   font-stretch: condensed;
   font-size: clamp(2rem, 3.6vw, 2.65rem);
+  line-height: 1.15;
   letter-spacing: -0.01em;
 }}
 .ag-subtitle {{
@@ -1893,7 +1839,7 @@ body[data-dialect="manual"] .ag-hero h1 {{
 .ag-inv-table th {{ font-weight: 600; color: var(--text); }}
 .ag-inv-table td {{ color: var(--text-muted); }}
 .ag-toc {{
-  display: none;
+  display: block;
   margin: 18px 0 28px;
   padding: 14px 18px;
   border: 1px solid var(--border);
@@ -1910,7 +1856,6 @@ body[data-dialect="manual"] .ag-hero h1 {{
 }}
 .ag-toc a {{ color: var(--text); text-decoration: none; }}
 .ag-toc a:hover {{ text-decoration: underline; color: var(--accent); }}
-body[data-dialect="manual"] .ag-toc {{ display: block; }}
 
 .ag-cheatsheet {{
   border: 1px solid var(--border-strong);
@@ -1974,14 +1919,10 @@ body[data-dialect="manual"] .ag-toc {{ display: block; }}
 }}
 .ag-fastener-dim {{ font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }}
 
-/* Step layout: manual layout */
+/* Step layout */
 .ag-step {{
   padding: 18px 0 28px;
   border-top: 2px solid var(--accent);
-}}
-body[data-dialect="workbench"] .ag-step {{
-  border-top: 1px solid var(--border);
-  padding: 24px 0 30px;
 }}
 .ag-step-header {{
   display: flex;
@@ -2001,12 +1942,6 @@ body[data-dialect="workbench"] .ag-step {{
   color: var(--accent);
   letter-spacing: 0.02em;
 }}
-body[data-dialect="workbench"] .ag-step-num {{
-  font-family: var(--font-sans);
-  font-stretch: normal;
-  font-size: 1.15rem;
-  color: var(--accent-alt);
-}}
 .ag-step-title {{
   margin: 0;
   font-family: var(--font-condensed);
@@ -2014,13 +1949,6 @@ body[data-dialect="workbench"] .ag-step-num {{
   font-size: 1.5rem;
   font-weight: 600;
   color: #52525b;
-}}
-body[data-dialect="workbench"] .ag-step-title {{
-  font-family: var(--font-sans);
-  font-stretch: normal;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text);
 }}
 .ag-step-done {{
   display: inline-flex;
@@ -2034,55 +1962,25 @@ body[data-dialect="workbench"] .ag-step-title {{
 }}
 .ag-step.is-completed {{ opacity: 0.68; }}
 
-/* Manual layout: adaptive 1 / 2 / 3 visual grids */
-body[data-dialect="manual"] .ag-step[data-img-count="1"] .ag-step-body {{
+/* Adaptive 1 / 2 / 3 visual grids */
+.ag-step[data-img-count="1"] .ag-step-body {{
   display: grid;
   grid-template-columns: minmax(260px, 47%) 1fr;
   gap: 24px;
   align-items: start;
 }}
-body[data-dialect="manual"] .ag-step[data-img-count="2"] .ag-media {{
+.ag-step[data-img-count="2"] .ag-media {{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 16px;
 }}
-body[data-dialect="manual"] .ag-step[data-img-count="3"] .ag-media {{
+.ag-step[data-img-count="3"] .ag-media {{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }}
-body[data-dialect="manual"] .ag-thumbs {{ display: none; }}
-
-/* Workbench layout: 4:3 stage + thumbnails */
-body[data-dialect="workbench"] .ag-step-body {{
-  display: grid;
-  grid-template-columns: minmax(300px, 55%) 1fr;
-  gap: 26px;
-  align-items: start;
-}}
-body[data-dialect="workbench"] .ag-frame {{ display: none; }}
-body[data-dialect="workbench"] .ag-frame.is-active {{ display: block; }}
-.ag-thumbs {{
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}}
-.ag-thumb {{
-  width: 92px;
-  padding: 0;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-inner);
-  background: #fff;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 140ms ease;
-}}
-.ag-thumb:active {{ transition-duration: 0ms; transform: scale(0.98); }}
-.ag-thumb.is-active {{ border-color: var(--accent-alt); }}
-.ag-thumb svg {{ display: block; width: 100%; height: auto; }}
 
 .ag-frame {{
   margin: 0;
@@ -2092,7 +1990,6 @@ body[data-dialect="workbench"] .ag-frame.is-active {{ display: block; }}
   cursor: zoom-in;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }}
-body[data-dialect="workbench"] .ag-frame {{ border-radius: 8px; }}
 .ag-visual-svg {{ display: block; width: 100%; height: auto; }}
 
 /* Bullets & Icons */
@@ -2124,8 +2021,6 @@ body[data-dialect="workbench"] .ag-frame {{ border-radius: 8px; }}
   justify-content: center;
   margin-top: 3px;
 }}
-body[data-dialect="manual"] .ag-glyph-ring {{ display: none; }}
-body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
 .ag-btype-warning .ag-bullet-text {{ color: var(--warn-red); font-weight: 500; }}
 .ag-btype-pin .ag-bullet-text {{ font-weight: 500; }}
 .ag-bullet-text code {{
@@ -2201,11 +2096,10 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
 .ag-print-notes {{ display: none; }}
 
 @media screen and (max-width: 760px) {{
-  body[data-dialect="manual"] .ag-step[data-img-count="1"] .ag-step-body,
-  body[data-dialect="workbench"] .ag-step-body {{
+  .ag-step[data-img-count="1"] .ag-step-body {{
     grid-template-columns: 1fr;
   }}
-  body[data-dialect="manual"] .ag-step[data-img-count="3"] .ag-media {{
+  .ag-step[data-img-count="3"] .ag-media {{
     grid-template-columns: 1fr;
   }}
   .ag-toc ol {{ columns: 1; }}
@@ -2213,11 +2107,10 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
 
 @media print {{
   @page {{ size: {paper} portrait; margin: 14mm; }}
-  .ag-topbar, .ag-step-done, .ag-thumbs, .ag-lightbox {{ display: none !important; }}
+  .ag-topbar, .ag-step-done, .ag-lightbox {{ display: none !important; }}
   body {{ font-size: 10.5pt; }}
   .ag-container {{ max-width: 100%; padding: 0; }}
   .ag-step {{ break-inside: avoid; page-break-inside: avoid; opacity: 1 !important; }}
-  body[data-dialect="workbench"] .ag-frame {{ display: block !important; margin-bottom: 6px; }}
   /* Print keeps single visuals full width so callouts stay legible. */
   .ag-step[data-img-count="1"] .ag-step-body {{ display: block !important; }}
   .ag-step[data-img-count="1"] .ag-media {{ margin-bottom: 12px; }}
@@ -2233,7 +2126,7 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
 }}
 </style>
 </head>
-<body data-dialect="{html.escape(default_dialect)}">
+<body>
 <div class="ag-topbar">
   <div class="ag-topbar-meta">
     <span class="ag-cat-tag">{category}</span>
@@ -2241,10 +2134,6 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
     <span class="ag-progress-pill" id="ag-progress">0 / {len(steps)} steps</span>
   </div>
   <div class="ag-controls">
-    <div class="ag-seg-track" role="group" aria-label="Guide visual dialect">
-      <button type="button" class="ag-seg-btn{' is-active' if default_dialect == 'manual' else ''}" data-set-dialect="manual">Manual layout</button>
-      <button type="button" class="ag-seg-btn{' is-active' if default_dialect == 'workbench' else ''}" data-set-dialect="workbench">Workbench layout</button>
-    </div>
     {pdf_link_html}
     <button type="button" class="ag-btn" id="ag-print-btn">Print</button>
   </div>
@@ -2298,35 +2187,11 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
 <script>
 (() => {{
   const STORAGE_KEY = "ag_done_{storage_key}";
-  const body = document.body;
-
-  // Dialect switcher
-  document.querySelectorAll("[data-set-dialect]").forEach((btn) => {{
-    btn.addEventListener("click", () => {{
-      const d = btn.getAttribute("data-set-dialect");
-      body.setAttribute("data-dialect", d);
-      document.querySelectorAll("[data-set-dialect]").forEach((b) => {{
-        b.classList.toggle("is-active", b === btn);
-      }});
-    }});
-  }});
 
   document.getElementById("ag-print-btn").addEventListener("click", () => window.print());
 
-  // Thumbnail frame switching + color-synced bullet hover
+  // Color-synced bullet hover & click highlighting
   document.querySelectorAll(".ag-step").forEach((stepEl) => {{
-    const frames = Array.from(stepEl.querySelectorAll(".ag-frame"));
-    const thumbs = Array.from(stepEl.querySelectorAll(".ag-thumb"));
-    const setFrame = (idx) => {{
-      frames.forEach((f, i) => f.classList.toggle("is-active", i === idx));
-      thumbs.forEach((t, i) => t.classList.toggle("is-active", i === idx));
-    }};
-    thumbs.forEach((thumb) => {{
-      const idx = Number(thumb.getAttribute("data-target-idx"));
-      thumb.addEventListener("mouseenter", () => setFrame(idx));
-      thumb.addEventListener("click", () => setFrame(idx));
-    }});
-
     stepEl.querySelectorAll(".ag-bullet[data-color]").forEach((bullet) => {{
       const col = bullet.getAttribute("data-color");
       const highlight = (active) => {{
@@ -2335,12 +2200,6 @@ body[data-dialect="workbench"] .ag-glyph-hex {{ display: none; }}
         stepEl.querySelectorAll(`.ag-marker[data-color="${{col}}"]`).forEach((m) => {{
           m.classList.toggle("is-highlighted", active);
         }});
-        if (active && body.getAttribute("data-dialect") === "workbench") {{
-          const matchIdx = frames.findIndex((f) =>
-            (f.getAttribute("data-colors") || "").split(" ").includes(col)
-          );
-          if (matchIdx >= 0) setFrame(matchIdx);
-        }}
       }};
       bullet.addEventListener("mouseenter", () => highlight(true));
       bullet.addEventListener("mouseleave", () => highlight(false));
@@ -2420,7 +2279,6 @@ window.addEventListener('load', () => {
   const push = (code, where, msg) => out.push({code, where, msg});
   const stepOf = (el) => { const s = el.closest('.ag-step'); return s ? s.id : 'header'; };
   document.querySelectorAll('svg.ag-visual-svg').forEach((svg) => {
-    if (svg.closest('.ag-thumb')) return;
     const where = stepOf(svg);
     const inv = svg.getCTM() ? svg.getCTM().inverse() : null;
     svg.querySelectorAll('text').forEach((t) => {
@@ -2712,7 +2570,6 @@ SAMPLE_GUIDE: dict[str, Any] = {
     "category": "Hardware maintenance",
     "guide_id": "g-demo-01",
     "archetype": "roundtrip",
-    "default_dialect": "manual",
     "difficulty": "Moderate",
     "time_required": "20–30 minutes",
     "variants": [{
@@ -3328,12 +3185,6 @@ def main(argv: list[str] | None = None) -> int:
       "--markdown", type=pathlib.Path, help="Output GFM Markdown path"
   )
   p_build.add_argument(
-      "--pdf-dialect",
-      choices=sorted(VALID_DIALECTS),
-      default=None,
-      help="Layout dialect used for the PDF (default: guide default_dialect)",
-  )
-  p_build.add_argument(
       "--paper", choices=("a4", "letter"), default="a4", help="PDF paper size"
   )
   p_build.add_argument(
@@ -3474,7 +3325,6 @@ def main(argv: list[str] | None = None) -> int:
         data,
         base_dir=base_dir,
         embed_images=True,
-        dialect_override=args.pdf_dialect,
         paper=args.paper,
     )
     with tempfile.TemporaryDirectory(prefix="ag-print-") as tmp:
