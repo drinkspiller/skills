@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{APP}} — Sitemap &amp; Routing Flowchart</title>
+  <!--
+    Route-flow page template. Static HTML + inline SVG, zero JavaScript.
+    Layout grid for the page-routing SVG (viewBox 0 0 1100 800):
+      - Column x=500 : root entry + "Signed in?" decision
+      - Column x=190 : public surfaces (left)
+      - Column x=680 : happy path (auth → access gate → terms → app home)
+      - Column x=900 : deny / gated branches (right)
+      - Row y=690    : leaf routes under the app home
+    Replace every {{PLACEHOLDER}} and delete nodes that do not apply.
+  -->
+  <style>
+    :root {
+      --bg: #f8fafc; --surface: #fff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #475569; --subtle: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff; --blue-border: #93c5fd;
+      --green: #059669; --green-bg: #ecfdf5; --green-border: #6ee7b7;
+      --amber: #d97706; --amber-bg: #fffbeb; --amber-border: #fcd34d;
+      --purple: #7c3aed; --purple-bg: #f5f3ff; --purple-border: #c4b5fd;
+      --rose: #e11d48; --rose-bg: #fff1f2; --rose-border: #fda4af;
+      --teal: #0d9488; --teal-bg: #f0fdfa; --teal-border: #5eead4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 32px 24px 48px; line-height: 1.5; }
+    .container { max-width: 1180px; margin: 0 auto; }
+    header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+    h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+    h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .subtitle { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .section-lede { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); background: var(--surface); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); margin-bottom: 24px; overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; height: auto; display: block; }
+    .route-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .route-table th, .route-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .route-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtle); background: #f1f5f9; }
+    .route-table tr:last-child td { border-bottom: none; }
+    .route-table tr.is-new td:first-child { box-shadow: inset 3px 0 0 var(--teal); }
+    code { font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .badge-public { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .badge-auth { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+    .badge-redirect { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .badge-gate { background: var(--rose-bg); color: var(--rose); border: 1px solid var(--rose-border); }
+    .badge-new { background: var(--teal-bg); color: var(--teal); border: 1px solid var(--teal-border); margin-left: 6px; }
+    .callout { font-size: 13px; color: var(--muted); background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; }
+    .callout strong { color: #92400e; }
+    .change-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .change-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--muted); }
+    .change-item a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    .change-item a:hover { text-decoration: underline; }
+    .change-item .change-title { color: var(--text); font-weight: 600; display: block; margin: 2px 0 4px; }
+    footer { font-size: 11px; color: var(--subtle); text-align: right; margin-top: 8px; }
+    footer a { color: var(--subtle); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>{{APP}} Sitemap &amp; Routing Flowchart</h1>
+        <p class="subtitle">{{ONE_LINE_SCOPE — list the gates and route families shown}}</p>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:#eff6ff;border:1.5px solid #2563eb;"></span><span>Entry / Route</span></div>
+        <div class="legend-item"><span class="swatch" style="background:#fffbeb;border:1.5px solid #d97706;"></span><span>Auth / Terms Gate</span></div>
+        <div class="legend-item"><span class="swatch" style="background:#fff1f2;border:1.5px solid #e11d48;"></span><span>Access / Deny Gate</span></div>
+        <div class="legend-item"><span class="swatch" style="background:#ecfdf5;border:1.5px solid #059669;"></span><span>Public Surface</span></div>
+        <div class="legend-item"><span class="swatch" style="background:#f5f3ff;border:1.5px solid #7c3aed;"></span><span>Authenticated App</span></div>
+        <div class="legend-item"><span class="swatch" style="background:#f0fdfa;border:1.5px dashed #0d9488;"></span><span>New in change set</span></div>
+      </div>
+    </header>
+
+    <!-- Only when the diagram includes unmerged changes. -->
+    <div class="callout">
+      <strong>Pending changes.</strong> {{Which nodes come from unmerged changes, which environments enforce each gate, and which flag controls it.}}
+    </div>
+
+    <div class="card">
+      <h2>1. Page routing (<code>{{SERVER_ENTRY}}</code> + <code>{{CLIENT_ROUTER}}</code>)</h2>
+      <p class="section-lede">{{Who makes the first decision server-side, and which client guards mirror it, in order.}}</p>
+      <svg viewBox="0 0 1100 800" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b"/></marker>
+          <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#2563eb"/></marker>
+          <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#059669"/></marker>
+          <marker id="arrow-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#e11d48"/></marker>
+          <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#0d9488"/></marker>
+        </defs>
+
+        <!-- ROOT (entry route, blue) -->
+        <rect x="380" y="20" width="240" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="500" y="48" text-anchor="middle" font-size="16" font-weight="700" fill="#1e3a8a">/ (Root Entry)</text>
+        <text x="500" y="68" text-anchor="middle" font-size="12" fill="#475569">Wildcard /** also redirects here</text>
+        <line x1="500" y1="84" x2="500" y2="128" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-slate)"/>
+
+        <!-- DECISION (amber diamond: half-width 110, half-height 44; max 2 text lines) -->
+        <polygon points="500,132 610,176 500,220 390,176" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+        <text x="500" y="173" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">Signed In?</text>
+        <text x="500" y="189" text-anchor="middle" font-size="11" fill="#b45309">{{server action / client guard}}</text>
+
+        <!-- Branch label: text on a lightly filled rect in the branch color -->
+        <path d="M 390 176 L 190 176 L 190 250" fill="none" stroke="#059669" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <rect x="222" y="154" width="136" height="22" rx="4" fill="#ecfdf5"/>
+        <text x="290" y="169" text-anchor="middle" font-size="11" font-weight="600" fill="#059669">No → 302 /landing</text>
+
+        <path d="M 610 176 L 680 176 L 680 252" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <rect x="640" y="154" width="80" height="22" rx="4" fill="#eff6ff"/>
+        <text x="680" y="169" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">Yes</text>
+
+        <!-- PUBLIC SURFACE (green rect, left column) -->
+        <rect x="60" y="254" width="260" height="96" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+        <text x="190" y="282" text-anchor="middle" font-size="16" font-weight="700" fill="#065f46">/landing</text>
+        <text x="190" y="302" text-anchor="middle" font-size="12" fill="#047857">{{Component}}</text>
+        <text x="190" y="320" text-anchor="middle" font-size="11" fill="#475569">{{behavior line 1}}</text>
+        <text x="190" y="336" text-anchor="middle" font-size="11" fill="#475569">{{behavior line 2}}</text>
+
+        <!-- TRANSIENT STEP (amber dashed rect, e.g. sign-in) -->
+        <path d="M 320 302 L 420 302" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <rect x="424" y="274" width="132" height="56" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="490" y="298" text-anchor="middle" font-size="12" font-weight="600" fill="#92400e">Sign-In</text>
+        <text x="490" y="314" text-anchor="middle" font-size="10" fill="#b45309">(if signed out)</text>
+        <path d="M 556 302 L 602 302" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+        <!-- ACCESS GATE (rose diamond, half-width 74) + NEW pill -->
+        <polygon points="680,256 754,302 680,348 606,302" fill="#fff1f2" stroke="#e11d48" stroke-width="2"/>
+        <text x="680" y="298" text-anchor="middle" font-size="12" font-weight="700" fill="#9f1239">Allowed?</text>
+        <text x="680" y="313" text-anchor="middle" font-size="9.5" fill="#be123c">{{guard}}</text>
+        <rect x="716" y="246" width="38" height="16" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+        <text x="735" y="258" text-anchor="middle" font-size="9" font-weight="700" fill="#0d9488">NEW</text>
+
+        <!-- DENY (rose dashed rect, right column; dashed arrow) -->
+        <path d="M 754 302 L 822 302" fill="none" stroke="#e11d48" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow-rose)"/>
+        <text x="788" y="294" text-anchor="middle" font-size="11" font-weight="600" fill="#e11d48">No</text>
+        <rect x="826" y="262" width="244" height="80" rx="10" fill="#fff1f2" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="948" y="290" text-anchor="middle" font-size="14" font-weight="700" fill="#9f1239">HTTP 404 / Denied</text>
+        <text x="948" y="310" text-anchor="middle" font-size="11" fill="#475569">{{what the user sees}}</text>
+        <text x="948" y="326" text-anchor="middle" font-size="10" fill="#64748b">{{RPC error code}}</text>
+
+        <!-- Happy path continues down column x=680 -->
+        <line x1="680" y1="348" x2="680" y2="556" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+        <text x="690" y="377" font-size="11" font-weight="600" fill="#2563eb">Yes</text>
+
+        <!-- APP HOME (purple rect) -->
+        <rect x="560" y="560" width="260" height="76" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+        <text x="690" y="588" text-anchor="middle" font-size="16" font-weight="700" fill="#4c1d95">/app</text>
+        <text x="690" y="606" text-anchor="middle" font-size="12" fill="#5b21b6">{{Component}}</text>
+        <text x="690" y="623" text-anchor="middle" font-size="10.5" fill="#475569">{{one line}}</text>
+
+        <!-- LEAF ROUTES (row y=690, elbow connectors) -->
+        <path d="M 630 636 L 630 664 L 440 664 L 440 686" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-slate)"/>
+        <path d="M 750 636 L 750 664 L 700 664 L 700 686" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow-slate)"/>
+        <rect x="330" y="690" width="220" height="70" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="440" y="716" text-anchor="middle" font-size="14" font-weight="700" fill="#4c1d95">/app/new</text>
+        <text x="440" y="734" text-anchor="middle" font-size="11" fill="#475569">{{Component}}</text>
+        <text x="440" y="750" text-anchor="middle" font-size="10" fill="#64748b">{{guards}}</text>
+        <rect x="590" y="690" width="220" height="70" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="700" y="716" text-anchor="middle" font-size="14" font-weight="700" fill="#4c1d95">/app/:id</text>
+        <text x="700" y="734" text-anchor="middle" font-size="11" fill="#475569">{{Component}}</text>
+        <text x="700" y="750" text-anchor="middle" font-size="10" fill="#64748b">{{guards}}</text>
+
+        <!-- NEW ROUTE (teal dashed rect) reached from a leaf, dashed teal arrow -->
+        <path d="M 810 725 L 856 725" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrow-teal)"/>
+        <text x="833" y="716" text-anchor="middle" font-size="10" font-weight="600" fill="#0d9488">Share</text>
+        <rect x="860" y="680" width="220" height="92" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="970" y="704" text-anchor="middle" font-size="14" font-weight="700" fill="#115e59">/view/:token</text>
+        <text x="970" y="722" text-anchor="middle" font-size="11" fill="#0f766e">{{Component}}</text>
+        <text x="970" y="738" text-anchor="middle" font-size="10" fill="#475569">{{guards}}</text>
+      </svg>
+    </div>
+
+    <!-- ROUTE TABLE: one column per user state that the gates distinguish. -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table class="route-table">
+        <thead>
+          <tr><th>Route</th><th>Access</th><th>Signed-Out</th><th>Signed-In, Denied</th><th>Signed-In, Allowed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/</code></td>
+            <td><span class="badge badge-redirect">Entry Redirect</span></td>
+            <td><code>302</code> to <code>/landing</code></td>
+            <td>{{...}}</td>
+            <td>Client redirect to <code>/app</code></td>
+          </tr>
+          <tr class="is-new">
+            <td><code>/view/:token</code><span class="badge badge-new">NEW</span></td>
+            <td><span class="badge badge-auth">Auth + Access</span></td>
+            <td>{{...}}</td>
+            <td>{{...}}</td>
+            <td>{{...}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RPC / API PERIMETER: horizontal pipeline lanes, failure codes drop below each stage. -->
+    <div class="card">
+      <h2>2. Service request perimeter (<code>{{SERVICE_IMPL}}</code>)</h2>
+      <p class="section-lede">{{Which endpoints share the ordered checks, and which are exempt.}}</p>
+      <svg viewBox="0 0 1100 240" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <marker id="a2-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#64748b"/></marker>
+          <marker id="a2-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 8 5 L 0 9 z" fill="#e11d48"/></marker>
+        </defs>
+        <text x="20" y="34" font-size="12" font-weight="700" fill="#475569">{{LANE NAME (UPPERCASE)}}</text>
+        <text x="20" y="50" font-size="10.5" fill="#64748b">{{Endpoint · Endpoint · Endpoint}}</text>
+
+        <rect x="20" y="74" width="130" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+        <text x="85" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">Request</text>
+        <line x1="150" y1="106" x2="176" y2="106" stroke="#64748b" stroke-width="2" marker-end="url(#a2-slate)"/>
+
+        <rect x="180" y="74" width="170" height="64" rx="10" fill="#fff1f2" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="265" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#9f1239">{{checkFunction}}</text>
+        <text x="265" y="118" text-anchor="middle" font-size="10" fill="#475569">{{what it checks}}</text>
+        <line x1="265" y1="138" x2="265" y2="176" stroke="#e11d48" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#a2-rose)"/>
+        <text x="265" y="192" text-anchor="middle" font-size="10.5" font-weight="600" fill="#e11d48">{{ERROR_CODE}}</text>
+        <line x1="350" y1="106" x2="376" y2="106" stroke="#64748b" stroke-width="2" marker-end="url(#a2-slate)"/>
+
+        <rect x="380" y="74" width="150" height="64" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+        <text x="455" y="110" text-anchor="middle" font-size="12" font-weight="700" fill="#4c1d95">{{Backend}}</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <h2>Source changes</h2>
+      <p class="section-lede">{{Where the changes live; which ones do not affect routes.}}</p>
+      <div class="change-grid">
+        <div class="change-item"><a href="{{LINK}}">{{ID}}</a><span class="change-title">{{Short title}}</span>{{Routes / gates / services it adds}}</div>
+      </div>
+    </div>
+
+    <footer>Updated {{YYYY-MM-DD}} · <a href="{{PREVIOUS_VERSION_FILE}}">previous version ({{YYYY-MM-DD}})</a></footer>
+  </div>
+</body>
+</html>
