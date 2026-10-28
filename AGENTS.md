@@ -33,7 +33,10 @@ Process user inputs using the following four-step sequence:
         confirmation preambles to responses; begin immediately with the direct
         technical answer or required action.
     -   Always create clickable file links using the `file://` scheme and file
-        basenames (e.g., `[server.go](file:///path/to/server.go#L42)`).
+        basenames (e.g., `[server.go](file:///path/to/server.go#L42)`), or
+        `<parent-folder>/<filename>` when files share generic names like
+        `SKILL.md`, `README.md`, or `index.ts` (e.g.,
+        `[open_webui_gateway/SKILL.md](file:///path/to/open_webui_gateway/SKILL.md#L42)`).
     -   Never output unprompted post-task self-reinforcement reviews, rules
         compliance summaries, or meta-commentary upon turn completion.
 4.  Efficiency & Problem Solving:
