@@ -274,3 +274,63 @@ composer.render();
 -   Dispose textures, geometries, and materials when removing objects
 -   Use `renderer.info` to monitor draw calls and triangles
 -   Set `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))`
+-   Sort multi-layer opaque geometry **front-to-back**
+    (`renderOrder = 1, 2, 3...`) so Z-buffer rejection skips occluded
+    high-resolution fragment work, and guard `discard` behind `#ifdef` defines
+    only on layers that cut holes (any compiled `discard` disables hardware
+    Early-Z for that draw call).
+-   **GPU pass-ablation profiling:** Bare `performance.now()` around
+    `renderer.render()` or `composer.render()` only measures async CPU command
+    submission. In a throwaway profiling harness, append a `1x1`
+    `gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)` synchronous
+    GPU fence when ablating individual passes (MSAA sample count, bloom
+    resolution, shadow-map size, mesh layers, shader branches) one variable at a
+    time, and launch headless Chromium against the hardware GPU
+    (`--use-angle=vulkan --enable-features=Vulkan --disable-vulkan-surface
+    --ignore-gpu-blocklist`) rather than relying solely on CPU SwiftShader
+    numbers.
+
+## Shader, Blending & Interaction Gotchas
+
+### 1. Never Sample Mipmapped Textures Inside Non-Uniform Branches
+
+Calling `texture2D(sampler, uv)` on a mipmapped texture
+(`THREE.LinearMipmapLinearFilter`) inside a fragment-varying `if` or ternary
+(`w > 0.0001 ? texture2D(...) : ...`) corrupts `2x2` pixel-quad `dFdx`/`dFdy`
+screen-space derivatives on Metal, Vulkan, and ANGLE along the branch boundary,
+spiking LOD to the `1x1` top mip and drawing a 1-pixel seam line. Sample
+mipmapped textures in uniform control flow and blend with `mix(...)`, or use
+explicit `textureLod(...)`.
+
+### 2. Premultiplied Additive Point Sprites in HDR / SMAA Pipelines
+
+`THREE.AdditiveBlending` computes `SrcAlpha * src.rgb + dst.rgb` and writes
+`src.a` into the target alpha channel. Outputting premultiplied
+`gl_FragColor = vec4(col * alpha, alpha)` under `THREE.AdditiveBlending` squares
+`alpha` (`alpha * alpha`) and pollutes `dst.a`, causing alpha-gated
+post-processing (such as `SMAAPass`) to blur small point sprites. For crisp GPU
+sparks and motes, use explicit premultiplied RGB additive blending that
+preserves destination alpha:
+
+```javascript
+const motesMat = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.CustomBlending,
+  blendEquation: THREE.AddEquation,
+  blendSrc: THREE.OneFactor,
+  blendDst: THREE.OneFactor,
+  blendSrcAlpha: THREE.ZeroFactor,
+  blendDstAlpha: THREE.OneFactor,
+});
+```
+
+Keep fast particle motion on its own time uniform (for example, `uMoteTime`)
+rather than sharing a slowed volumetric-beam time uniform.
+
+### 3. Viewport Pointer Parallax Hold on Exit
+
+When driving camera azimuth and polar offsets from normalized cursor coordinates
+(`pointermove`), do **not** reset targets to `(0, 0)` on `document` `mouseleave`
+or `window` `blur`. Leaving the last target intact holds the scene steady when
+the pointer exits the browser window instead of causing a camera jump.
