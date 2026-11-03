@@ -361,12 +361,13 @@ the pointer exits the browser window instead of causing a camera jump.
 
 ### 2. Sub-Sky Disparity Halo Extension, `StageBack` Skyline Recession & `StageFgCopy` Welding
 
--   **Symptom 1 (Floating Sky Contours Above Roofs, Spires, Signs & Mountains):**
-    ViT depth models (`Depth Anything V2`) smear foreground disparity `dn`
-    (`0.06..0.38`) into the sky for `20–85 px` above high-contrast rooflines,
-    gothic spires, rooftop signs, and mountain ridges. Hard-stopping `sky` at
-    `dn < 0.06` tears `StageMain` in mid-air along the `dn = 0.06` contour and
-    attaches a `20–85 px` halo of sky to the 3D foreground mesh.
+-   **Symptom 1 (Floating Sky Contours Above Roofs, Spires, Signs &
+    Mountains):** ViT depth models (`Depth Anything V2`) smear foreground
+    disparity `dn` (`0.06..0.38`) into the sky for `20–85 px` above
+    high-contrast rooflines, gothic spires, rooftop signs, and mountain ridges.
+    Hard-stopping `sky` at `dn < 0.06` tears `StageMain` in mid-air along the
+    `dn = 0.06` contour and attaches a `20–85 px` halo of sky to the 3D
+    foreground mesh.
 -   **Symptom 2 (Silhouette Ghosts Stamped into `*_v4_sky.jpg` & `StageBack`):**
     Blending `plates["B"]` into `push_pull(plates["B"], pure_sky_b)` across a
     narrow `sigma = 4.5 px` mask (`pure_inner_b`) stamps a dilated silhouette
@@ -381,9 +382,10 @@ the pointer exits the browser window instead of causing a camera jump.
     1.  **Extend `skyA` & Gate `dark_rim_outlier` Monotonically:** Pass clean
         `plates["B"]` as `sky_ref` into `map_depth` for `plateA` with
         `dcol_eff_a = minimum(dcol, dcol_ab_w)`, and require column-monotonic
-        darkening `((lum_r_sky - lum_p_sky > 8.5) & (lum_up75 - lum_p_sky > 5.5))`
-        on `dark_rim_outlier` so downward-brightening sunset horizons never get
-        a 95-px cloud halo cutout while dark roof, sign, and spire halos are
+        darkening
+        `((lum_r_sky - lum_p_sky > 8.5) & (lum_up75 - lum_p_sky > 5.5))` on
+        `dark_rim_outlier` so downward-brightening sunset horizons never get a
+        95-px cloud halo cutout while dark roof, sign, and spire halos are
         scrubbed into `pure_sky_b`.
     2.  **Trim `StageBack` Above Foreground Skylines:** Remove `StageBack`
         triangles projecting above the foreground roofline via
@@ -391,6 +393,6 @@ the pointer exits the browser window instead of causing a camera jump.
         `sky_b = True` (`cls.b > 0.028` discard) so disoccluded rays behind any
         skyline hit clean sky.
     3.  **Global Vertex Welding on `StageFgCopy`:** Run `build_welded_fg_copies`
-        after `r_mask` finalization with `r_mask_q` and `must_pin = has_prev | opaque_mv`,
-        keeping connected foreground `tear` quads welded to `StageMain` with
-        zero vertical stepped depth slits.
+        after `r_mask` finalization with `r_mask_q` and
+        `must_pin = has_prev | opaque_mv`, keeping connected foreground `tear`
+        quads welded to `StageMain` with zero vertical stepped depth slits.
