@@ -334,3 +334,63 @@ When driving camera azimuth and polar offsets from normalized cursor coordinates
 (`pointermove`), do **not** reset targets to `(0, 0)` on `document` `mouseleave`
 or `window` `blur`. Leaving the last target intact holds the scene steady when
 the pointer exits the browser window instead of causing a camera jump.
+
+## Projective 3D Panorama Stages
+
+### 1. Indoor Forced-Perspective Atrium Envelope vs. Monocular Disparity Warping
+
+-   **Symptom:** In indoor architectural panoramas with bright skylights,
+    recessed wall screens, or diagonal structural columns (`google_bayview`),
+    monocular disparity (`Depth Anything V2`) assigns conflicting depths
+    (`5–18 m`) to coplanar walls and columns, causing visible rubber-sheet
+    warping and bending during horizontal mouse parallax; conversely, clamping
+    the wall to high-confidence floor inliers (`r_base ~ 0.62 * hp`) cuts across
+    foreground floor props and squad pucks (`z = -0.95 m`).
+-   **Rule:**
+    1.  Fit the affine floor plane `(s, t)` on `floor` inliers, then determine
+        the wall-floor crease row `r_base(c)` per column with a minimum
+        clearance ceiling (`r_base >= int(0.538 * hp)`, corresponding to
+        `world_z <= -1.37 m` behind all foreground squad pucks).
+    2.  Smooth `q_wall(c) = q_floor(r_base(c), c)` horizontally with a wide 1D
+        Gaussian (`sigma >= 90 px`) so the back wall forms a smooth, plumb
+        cylindrical envelope `rho_wall(phi) = 1 / q_wall(phi)`.
+    3.  Set indoor depth to `rho(r, c) = max(rho_floor(r, c), rho_wall(c))` with
+        `floor = (rho_floor <= rho_wall * 1.004)`. The floor remains 100% locked
+        to `y = 0` under all pucks while the walls rise vertically without local
+        depth bulges.
+
+### 2. Sub-Sky Disparity Halo Extension, `StageBack` Skyline Recession & `StageFgCopy` Welding
+
+-   **Symptom 1 (Floating Sky Contours Above Roofs, Spires, Signs & Mountains):**
+    ViT depth models (`Depth Anything V2`) smear foreground disparity `dn`
+    (`0.06..0.38`) into the sky for `20–85 px` above high-contrast rooflines,
+    gothic spires, rooftop signs, and mountain ridges. Hard-stopping `sky` at
+    `dn < 0.06` tears `StageMain` in mid-air along the `dn = 0.06` contour and
+    attaches a `20–85 px` halo of sky to the 3D foreground mesh.
+-   **Symptom 2 (Silhouette Ghosts Stamped into `*_v4_sky.jpg` & `StageBack`):**
+    Blending `plates["B"]` into `push_pull(plates["B"], pure_sky_b)` across a
+    narrow `sigma = 4.5 px` mask (`pure_inner_b`) stamps a dilated silhouette
+    outline of every spire, roof, and sign directly into `*_v4_sky.jpg`, while
+    untrimmed `StageBack` triangles poke above the foreground roofline during
+    orbit or X/Y edge inertia.
+-   **Symptom 3 (Vertical Staircase Slits Inside Tree Crowns & Signs):**
+    Splitting connected `tear` quads in `build_welded_fg_copies` before final
+    `r_mask` assignment breaks single tree crowns and signs along `8-px` grid
+    staircase boundaries with unshared vertex depths `v_rho`.
+-   **Rule:**
+    1.  **Extend `skyA` & Gate `dark_rim_outlier` Monotonically:** Pass clean
+        `plates["B"]` as `sky_ref` into `map_depth` for `plateA` with
+        `dcol_eff_a = minimum(dcol, dcol_ab_w)`, and require column-monotonic
+        darkening `((lum_r_sky - lum_p_sky > 8.5) & (lum_up75 - lum_p_sky > 5.5))`
+        on `dark_rim_outlier` so downward-brightening sunset horizons never get
+        a 95-px cloud halo cutout while dark roof, sign, and spire halos are
+        scrubbed into `pure_sky_b`.
+    2.  **Trim `StageBack` Above Foreground Skylines:** Remove `StageBack`
+        triangles projecting above the foreground roofline via
+        `trim_bg_mesh_above_fg_sil` and mark sub-skyline disocclusions with
+        `sky_b = True` (`cls.b > 0.028` discard) so disoccluded rays behind any
+        skyline hit clean sky.
+    3.  **Global Vertex Welding on `StageFgCopy`:** Run `build_welded_fg_copies`
+        after `r_mask` finalization with `r_mask_q` and `must_pin = has_prev | opaque_mv`,
+        keeping connected foreground `tear` quads welded to `StageMain` with
+        zero vertical stepped depth slits.
