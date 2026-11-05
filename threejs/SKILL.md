@@ -335,6 +335,18 @@ When driving camera azimuth and polar offsets from normalized cursor coordinates
 or `window` `blur`. Leaving the last target intact holds the scene steady when
 the pointer exits the browser window instead of causing a camera jump.
 
+### 4. Coplanar Floor / Bezel Z-Fighting & Character `polygonOffset`
+
+Stacking concentric cylinder bezels or overlapping `polygonOffset` discs on the
+`y = 0` floor plane produces sub-pixel depth-buffer shimmering under perspective
+zoom and camera parallax, while negative or inverted `polygonOffset` overrides
+on opaque character materials pull underlying throat, chest, or lining triangles
+through thin overlying collars. Merge stepped floor bezels into a single
+non-overlapping `LatheGeometry` profile, size surrounding floor occlusion rings
+so their inner radius meets the bezel outer rim cleanly (`fwidth(r)` edge
+antialiasing), keep ground-plane `polygonOffset` minimal, and keep
+`polygonOffset: false` on opaque character shaders.
+
 ## Projective 3D Panorama Stages
 
 ### 1. Indoor Forced-Perspective Atrium Envelope vs. Monocular Disparity Warping
