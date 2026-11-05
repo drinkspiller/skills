@@ -1,15 +1,10 @@
 ---
 name: assembly-guide
 description: >-
-  Authors, lints, renders, and critiques mistake-proof step-by-step assembly,
-  disassembly, maintenance, and teardown guides for any hardware, 3D-printed CAD
-  model, electronics build, lab setup, or operational workflow. Enforces
-  color-matched bullet-to-visual callouts, neutral base visuals, pre-action
-  hazard warnings, exact fastener and torque specs, tool and parts staging, and
-  closed-loop verification, then delivers an interactive HTML guide and a print
-  PDF checked by automated render audits and one visual review. Use when asked to
-  create an assembly guide, build instructions, repair or teardown manual, or
-  step-by-step maintenance procedure.
+  Authors, lints, renders, and audits step-by-step hardware, CAD, and
+  electronics assembly/teardown guides with color-matched visual callouts,
+  interactive HTML, and print PDFs. Use when creating assembly guides, build
+  instructions, or repair manuals.
 ---
 
 # Step-by-Step Assembly Guides (`assembly-guide`)

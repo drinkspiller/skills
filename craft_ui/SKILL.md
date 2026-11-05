@@ -1,6 +1,6 @@
 ---
 name: craft-ui
-description: Builds distinctive, production-grade frontend interfaces with high craft and zero AI aesthetic slop. Enforces brief inference, concentric border radius math, optical alignment, tactile active physics, strict eyebrow limits, and bounded verification loops. Use when asked to "design this page", "build a component", "de-slop", "anti-ai slop", "make it feel better", "UI polish", "audit UI", "make it look modern", "design engineering", "concentric radius", or "interface design".
+description: Builds production-grade frontend interfaces with concentric border radii, optical alignment, tactile push physics, and zero AI aesthetic slop. Use when designing pages/components, polishing UI craft, or auditing interface aesthetics.
 ---
 
 # Craft UI: Anti-Slop Frontend Design Engineering

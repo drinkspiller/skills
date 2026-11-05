@@ -1,6 +1,6 @@
 ---
 name: design-mock-audit
-description: Evaluates coded UI implementations against Figma mocks, design specifications, or baseline screenshots. Performs a 5-point audit covering layout and spacing, typography, colors and surface tokens, assets and copy, and interactive states. Produces a design craft narrative, discrepancy scorecard with severity ratings (P0-P3), and actionable CSS/code fixes. Use when the user asks "does this match the mock", "audit against figma", "verify design parity", "compare build with mock", "check figma fidelity", or runs /design-mock-audit or /visual-qa.
+description: Audits coded UIs against Figma mocks, specs, or baseline screenshots across layout, typography, tokens, copy, and interactive states with P0-P3 severity ratings and CSS fixes. Use for design parity checks (/design-mock-audit, /visual-qa).
 ---
 
 # Design Mock Audit

@@ -1,6 +1,9 @@
 ---
 name: eval-critic
-description: Critically assess and audit LLM evaluation and benchmark setups, scoring methodologies, and performance claims with skeptical measurement-theoretic rigor. Use when asked to evaluate or critique an eval/benchmark, assess dataset integrity, probe construct or ecological validity, or review LLM benchmarks.
+description: >-
+  Critically assesses AI/LLM evaluation setups, benchmarks, datasets, metrics,
+  and leaderboard claims across construct validity, contamination, LLM-as-judge
+  bias, and statistical rigor (/eval-critic).
 ---
 
 # ROLE

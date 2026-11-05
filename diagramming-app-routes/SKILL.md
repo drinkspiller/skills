@@ -1,16 +1,10 @@
 ---
 name: diagramming-app-routes
 description: >-
-  Builds or updates a static HTML sitemap and routing flowchart (hand-authored
-  inline SVG, route-by-user-state table, and request-perimeter pipeline) that
-  documents a web app's routes, auth/allowlist/waitlist/terms gates, and
-  server-side request checks, grounded in the actual code of a set of commits
-  or pull requests. Keeps a dated backup of the previous version. Use when
-  asked to "update the routing flow", "add the new routes to the sitemap",
-  "diagram the routes/guards in these PRs", "show the waitlist/allowlist
-  flow", or to refresh a routing/architecture flowchart after route or gate
-  changes. Don't use for cloud-infrastructure diagrams with vendor icons or
-  Mermaid-only output.
+  Builds or updates code-grounded static HTML sitemaps and inline-SVG routing
+  flowcharts (auth/allowlist/waitlist/terms gates and route-by-user-state
+  tables) with dated backups. Use when diagramming app routes or request gates
+  across commits or PRs.
 ---
 
 # Diagramming App Routes

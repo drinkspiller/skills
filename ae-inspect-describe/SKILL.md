@@ -1,6 +1,6 @@
 ---
 name: ae-inspect-describe
-description: Inspect the active Adobe After Effects composition via the After Effects MCP bridge (https://github.com/Dakkshin/after-effects-mcp), generate an exhaustive technical motion specification, and build a high-fidelity standalone interactive HTML/CSS/JS prototype with real-time HUD controls and dual-track WAAPI motion physics. Use when inspecting AE compositions, auditing keyframes/expressions/shaders, or translating AE animations into production WebGL, Canvas, and web UI.
+description: Inspects active Adobe After Effects compositions via the AE MCP bridge to generate technical motion specs and interactive HTML/CSS/JS WAAPI prototypes. Use when auditing AE keyframes/expressions or translating AE animations to web UI.
 notes: Intended to be used with the After Effects MCP server (https://github.com/Dakkshin/after-effects-mcp).
 metadata:
   mcp_server: https://github.com/Dakkshin/after-effects-mcp

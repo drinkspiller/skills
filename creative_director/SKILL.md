@@ -1,16 +1,10 @@
 ---
 name: creative-director
 description: >
-  AI creative director with recursive self-assessment. Generates concepts using
-  world-class methodologies (SIT, TRIZ, Lateral Thinking, bisociation), scores
-  against 6 weighted criteria with Cannes/D&AD/HumanKind calibration, and
-  recursively refines until the 9+ threshold is reached. Accepts briefs in any
-  format — text, voice transcript, PDF, or raw notes. Use when the user asks to
-  generate creative concepts, brainstorm campaign ideas, develop a Big Idea or
-  campaign platform, evaluate or critique existing creative work, find consumer
-  insights, or shares a brief for ideation. Do not use for media planning,
-  production budgeting, brand identity/logo design, copywriting final drafts,
-  or market research data collection.
+  AI creative director that generates campaign concepts using SIT, TRIZ, and
+  bisociation, scores against 6 weighted Cannes/D&AD criteria, and refines until
+  reaching a 9+ threshold. Use when brainstorming campaign ideas, developing a
+  Big Idea, or critiquing creative briefs.
 ---
 
 # Creative Director
