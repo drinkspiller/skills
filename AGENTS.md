@@ -80,7 +80,9 @@
         with recovery options.
     -   **Figma Fallback**: On Figma MCP `403 Token expired`, test
         `~/.figma_token` / `$FIGMA_API_KEY` existence (never printing bytes) and
-        run the Figma node fetcher without `--screenshot` (see
+        run the Figma node fetcher without `--screenshot` for spec/YAML tasks,
+        or try `--screenshot` + PNG download (tripping the Mock Raster Gate /
+        `ask_question` if image export fails) on visual parity/critic tasks (see
         `@rules/references/agents_full_reference.md`).
 
 ## 2. Communication, `ask_question` & Scope Gates
@@ -88,7 +90,7 @@
 -   **Style (Avoid First-Person Plural)**: Active voice, present tense,
     declarative trade-offs (no hedging), and explicit causal rationale/referents.
     Eliminate `we`/`our`/`us` in technical write-ups and code comments.
-    "Me/My" refers to skyebot (`skyebot@google.com`).
+    "Me/My" refers to the repository owner.
 -   **`ask_question` Contract**:
     1.  Print full analysis, pros/cons, and recommendation in visible chat
         `content` FIRST.

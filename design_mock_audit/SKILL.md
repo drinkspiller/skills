@@ -74,7 +74,7 @@ the user prompt:
 
 1.  **Always Inspect and State Visual Chrome Findings**: Examine image
     filenames, metadata, and visual indicators. State whether the images display
-    browser address bars (`localhost`, `skyebot.c.googlers.com`), DevTools
+    browser address bars (`localhost`, remote dev hostnames), DevTools
     sidebars, OS taskbars, scrollbars, or Figma canvas borders/headers.
 2.  **Mandatory Halt on Ambiguity**: If roles cannot be partitioned with
     certainty, or if multiple screenshots accompany a Figma link, DO NOT GUESS
@@ -106,7 +106,7 @@ Multiple screenshots detected ([Image A], [Image B]). I inspected the images for
 :                                         :                        : hierarchy, and asset   :
 :                                         :                        : composition.           :
 | **Live URL / Local Server** (e.g.,      | Use browser tooling    | Viewport screenshot,   |
-: `http\://skyebot.c.googlers.com\:PORT`) : (`gbrowser`,           : computed CSS styles,   :
+: `http\://localhost\:PORT`)             : (`gbrowser`,           : computed CSS styles,   :
 :                                         : screenshot capture) to : container bounding     :
 :                                         : render viewport.       : boxes, and interactive :
 :                                         :                        : state triggers         :
@@ -125,6 +125,23 @@ Multiple screenshots detected ([Image A], [Image B]). I inspected the images for
 variants are provided (e.g., a carousel of integration slides), you MUST fetch
 and inspect ALL provided Figma node IDs. It is explicitly forbidden to sample
 only a single node.
+
+**Mandatory Mock Raster Gate (No Silent YAML-Only Fallback):** When auditing a
+Figma URL, verify that at least one native-resolution rendered Figma PNG exists
+and is non-empty on disk before entering Step 3. Pass `maxDimension: 4096` to
+`get_screenshot` (the default `1024` blurs `1px` rims on desktop frames), and
+download any URL-based screenshot (including the node fetcher's `--screenshot`
+`metadata.screenshotUrl`) to a local `.png`. If the Figma URL omits `?node-id=`,
+resolve a target frame node ID from the node tree first. Simplified node
+YAML/JSON trees omit rendered pixels and can drop newer Figma effects (such as
+`GLASS` specular rims). If image export fails (`401`/`403`/`500`, expired MCP
+token, or a read-only token without image export access), **never** treat
+YAML-only parity as a clean visual pass. Halt and call `ask_question` asking the
+user to `(1)` refresh the Figma token or MCP server, `(2)` attach an exported
+Figma screenshot PNG, or `(3)` run explicitly as a **Degraded Spec-Only Audit
+(Blocked Visual Verification)** where the report marks
+`Overall Parity Rating: Blocked (Spec-Only, No Figma Raster Mock)` and leaves
+surface and edge effects unverified.
 
 ## Step 3: Execute the 5-Point Parity Audit
 
@@ -169,18 +186,26 @@ Evaluate fidelity across five fundamental dimensions:
     pill).
 -   **Elevation & Shadows**: Check `box-shadow` offset, blur radius, spread,
     color opacity, and elevation layers.
--   **Opacity & Blend Modes**: Verify backdrop filters, translucent overlays,
-    and state opacities.
+-   **Opacity, Blend Modes & Glass Detail Effects (`GLASS` / Specular Rim)**:
+    Verify backdrop filters, translucent overlays, and state opacities. When a
+    surface uses translucency, blur, or Figma Liquid Glass (`GLASS`), inspect
+    `1:1` edge and corner crops on both the Figma PNG and the live build for
+    `1px` perimeter specular rims (gradient ring catch-lights) and inner bevel
+    highlights (`inset` shadows). Never rely on `effects:` YAML metadata alone,
+    because simplified YAML dumps can omit non-shadow/blur effects.
 
 ### 4. Asset & Content Parity
 
+-   **`1:1` Edge Crops**: Pair whole-frame renders with native `1:1` crops on
+    corners, panel perimeters, seams, and hairline strokes so `1px` specular
+    rims and subtle borders are not lost in downscaled screenshots.
 -   **Icons**: Verify icon glyph choice, dimensions (e.g., 20px vs 24px), stroke
     width, and alignment with adjacent text.
 -   **Imagery**: Check aspect ratios, object-fit mode (`cover` vs `contain`),
     clipping masks, and placeholder rendering.
 -   **Copy & Microcopy**: Verify exact copy strings, punctuation, capitalization
-    (Title Case vs Sentence case), and truncation rules (`text-overflow:
-    ellipsis`).
+    (Title Case vs Sentence case), and truncation rules
+    (`text-overflow: ellipsis`).
 
 ### 5. Interactive States & Responsiveness
 
@@ -195,26 +220,12 @@ Evaluate fidelity across five fundamental dimensions:
 
 Rate every identified discrepancy:
 
-| Severity          | Impact           | Criteria                              |
-| :---------------- | :--------------- | :------------------------------------ |
-| **Critical (P0)** | Breaking         | Layout broken, primary action missing |
-:                   :                  : or obscured, severe contrast failure  :
-:                   :                  : (<3\:1 for text), wrong primary brand :
-:                   :                  : color. Blocks release.                :
-| **Major (P1)**    | Degraded         | Noticeable spacing deviation (>8px),  |
-:                   :                  : wrong font weight/family, missing     :
-:                   :                  : secondary state or element, incorrect :
-:                   :                  : border radius or elevation, missing   :
-:                   :                  : ambient gradient washes, or omission  :
-:                   :                  : of per-item dynamic chromatic         :
-:                   :                  : theming.                              :
-| **Minor (P2)**    | Noticeable Delta | Subtle spacing mismatch (2-4px),      |
-:                   :                  : slight color tone divergence, optical :
-:                   :                  : alignment shift, minor microcopy      :
-:                   :                  : discrepancy.                          :
-| **Polish (P3)**   | Sub-pixel Craft  | Micro-spacing tweak, transition curve |
-:                   :                  : adjustment, subpixel line-height      :
-:                   :                  : refinement.                           :
+Severity          | Impact           | Criteria
+:---------------- | :--------------- | :-------
+**Critical (P0)** | Breaking         | Layout broken, primary action missing or obscured, severe contrast failure (<3:1 for text), wrong primary brand color. Blocks release.
+**Major (P1)**    | Degraded         | Noticeable spacing deviation (>8px), wrong font weight/family, missing secondary state or element, incorrect border radius or elevation, missing ambient gradient washes, or omission of per-item dynamic chromatic theming.
+**Minor (P2)**    | Noticeable Delta | Subtle spacing mismatch (2-4px), slight color tone divergence, optical alignment shift, minor microcopy discrepancy.
+**Polish (P3)**   | Sub-pixel Craft  | Micro-spacing tweak, transition curve adjustment, subpixel line-height refinement.
 
 ## Step 5: Deliver the Report
 
@@ -225,7 +236,7 @@ Format the audit output into three distinct sections:
 
 **Mock Source:** [Figma Node URL or Mock Screenshot Path]
 **Build Source:** [Live URL, Component File, or Implementation Screenshot]
-**Overall Parity Rating:** [Pass / Polish / Revise / Fail] — [e.g. 88% Match]
+**Overall Parity Rating:** [Pass / Polish / Revise / Fail / Blocked (Spec-Only, No Figma Raster Mock)] — [e.g. 88% Match, or N/A when Blocked]
 
 ---
 

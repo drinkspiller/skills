@@ -37,13 +37,19 @@ edge-case walkthroughs are needed.
         `~/.figma_token`. On a `403 Token expired` error from Figma MCP, check
         `test -f ~/.figma_token || test -n "$FIGMA_API_KEY"` (existence only,
         never printing token bytes) and run the CLI node fetcher without
-        `--screenshot` before tripping the External Tool Auth Circuit Breaker.
+        `--screenshot` for spec/YAML tasks (or with `--screenshot` + PNG
+        download for visual parity/critic tasks) before tripping the External
+        Tool Auth Circuit Breaker.
     2.  PATs scoped to `file_content:read` succeed on `/v1/files/<key>/nodes`
         (default node fetch without `--screenshot`) but return `403 Forbidden`
-        or time out on `/v1/images` (`--screenshot`). Fetch node YAML without
-        `--screenshot` (`--depth 2` on parent flows, full depth on child
-        frames); never diagnose a `/v1/images` `403` as an expired PAT when
-        `/v1/files/<key>/nodes` succeeds.
+        or time out on `/v1/images` (`--screenshot`). For code or spec
+        extraction, fetch node YAML without `--screenshot` (`--depth 2` on
+        parent flows, full depth on child frames); never diagnose a `/v1/images`
+        `403` as an expired PAT when `/v1/files/<key>/nodes` succeeds. For
+        visual parity audits (`/design-mock-audit`, `/generative-critic-loop`),
+        never treat YAML-only fallback as a visual pass: prompt via
+        `ask_question` for a token with image-export access or an attached Figma
+        screenshot instead.
     3.  When a user message contains multiple labeled credentials (e.g., host-
         or machine-specific labels), never use first-match `re.search`
         (`matches[0]`); pair each token with its surrounding label via
