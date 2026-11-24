@@ -105,11 +105,11 @@ Multiple screenshots detected ([Image A], [Image B]). I inspected the images for
 :                                         : via `view_file`.       : palette, typography    :
 :                                         :                        : hierarchy, and asset   :
 :                                         :                        : composition.           :
-| **Live URL / Local Server** (e.g.,      | Use browser tooling    | Viewport screenshot,   |
-: `http\://localhost\:PORT`)             : (`gbrowser`,           : computed CSS styles,   :
-:                                         : screenshot capture) to : container bounding     :
-:                                         : render viewport.       : boxes, and interactive :
-:                                         :                        : state triggers         :
+| **Live URL / Local Server** (e.g.,      | Use headless browser   | Viewport screenshot,   |
+: `http\://localhost\:PORT`)             : tooling (Playwright,   : computed CSS styles,   :
+:                                         : headless Chromium, or  : container bounding     :
+:                                         : screenshot capture) to : boxes, and interactive :
+:                                         : render viewport.       : state triggers         :
 :                                         :                        : (hover/focus).         :
 | **Static Build Screenshot**             | View image directly    | Rendered visual        |
 :                                         : via `view_file`.       : composition and        :
